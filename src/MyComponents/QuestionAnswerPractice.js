@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 
 export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
-  // Main Practice State
   const [isPracticing, setIsPracticing] = useState(false);
   const [practiceTranscript, setPracticeTranscript] = useState("");
   const [practiceScore, setPracticeScore] = useState(null);
   const [missedWords, setMissedWords] = useState([]);
   
-  // Chunk Practice State (for practicing missed words)
   const [activeChunkIndex, setActiveChunkIndex] = useState(null);
   const [chunkTranscript, setChunkTranscript] = useState("");
   const [chunkResults, setChunkResults] = useState({});
 
   const practiceRecognitionRef = useRef(null);
 
-  // Clean up and reset practice state when modal closes or unmounts
   useEffect(() => {
     const practiceModalElement = document.getElementById(modalId);
 
@@ -50,7 +47,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
     setChunkResults({});
   };
 
-  // --- Main Practice Methods ---
   const startPractice = async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -128,7 +124,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
     let spokenCopy = [...spokenWords];
     let missed = [];
 
-    // Check frequency and identify missed words
     targetWords.forEach((word) => {
       const idx = spokenCopy.indexOf(word);
       if (idx !== -1) {
@@ -144,7 +139,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
     setMissedWords(missed);
   };
 
-  // --- Missed Words Chunk Practice Methods ---
   const startChunkPractice = async (index) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -173,7 +167,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
     recognition.onstart = () => {
       setActiveChunkIndex(index);
       setChunkTranscript("");
-      // Clear previous result for this specific chunk if they retry
       setChunkResults(prev => {
         const newResults = { ...prev };
         delete newResults[index];
@@ -216,7 +209,7 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
       const idx = spokenCopy.indexOf(word);
       if (idx !== -1) {
         matchedCount++;
-        spokenCopy.splice(idx, 1); // Remove matched word to prevent duplicate matching
+        spokenCopy.splice(idx, 1);
       } else {
         remainingMissed.push(word);
       }
@@ -230,7 +223,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
     }));
   };
 
-  // Helper to split arrays into sizes of 10
   const chunkArray = (arr, size) => {
     const result = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -259,28 +251,25 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
           </div>
           <div className="modal-body">
             
-            {/* Show Question */}
             <div className="mb-3">
               <h5 className="fw-bold text-primary">Question:</h5>
               <p className="fs-6 fw-semibold">{questionAnswer.title}</p>
             </div>
 
-            {/* Show Answer for Reference */}
             <div className="mb-3">
               <h5 className="fw-bold text-secondary">Expected Answer:</h5>
               <div 
-                className="p-3 border rounded bg-light" 
+                className="p-3 border rounded bg-body-tertiary" 
                 style={{ maxHeight: '150px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
               >
                 {questionAnswer.desc}
               </div>
             </div>
 
-            {/* Live Temporary Audio Speech Transcript (Main) */}
             <div className="mb-3">
               <label className="form-label fw-bold">Your Spoken Answer:</label>
               <div 
-                className="p-3 border rounded bg-white shadow-sm" 
+                className="p-3 border rounded bg-body shadow-sm" 
                 style={{ minHeight: '100px', whiteSpace: 'pre-wrap' }}
               >
                 {practiceTranscript ? (
@@ -291,7 +280,6 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="text-center mb-3">
               {isPracticing ? (
                 <button 
@@ -305,16 +293,15 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
                 <button 
                   className="btn btn-primary btn-lg px-4" 
                   onClick={startPractice}
-                  disabled={activeChunkIndex !== null} // Disable if practicing a chunk
+                  disabled={activeChunkIndex !== null}
                 >
                   🎤 Start Recording
                 </button>
               )}
             </div>
 
-            {/* Accuracy Score Result */}
             {practiceScore !== null && (
-              <div className="mt-4 p-3 border rounded bg-light shadow-sm">
+              <div className="mt-4 p-3 border rounded bg-body-tertiary shadow-sm">
                 <h5 className="text-center mb-3 fw-bold">Practice Accuracy Result</h5>
                 <div className="d-flex justify-content-between mb-2 fw-bold">
                   <span>Accuracy: {practiceScore}%</span>
@@ -337,23 +324,21 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
               </div>
             )}
 
-            {/* Missed Words Practice Section */}
             {missedWords.length > 0 && (
-              <div className="mt-4 p-3 border rounded border-danger shadow-sm bg-white">
+              <div className="mt-4 p-3 border rounded border-danger shadow-sm bg-body">
                 <h5 className="mb-3 text-danger fw-bold border-bottom pb-2">
                   Mistakes Found: {missedWords.length} Words to Practice
                 </h5>
                 
                 {missedChunks.map((chunk, index) => (
-                  <div key={index} className="mb-3 p-3 border rounded bg-light shadow-sm">
+                  <div key={index} className="mb-3 p-3 border rounded bg-body-tertiary shadow-sm">
                     <p className="fw-bold mb-1">Set {index + 1} of {missedChunks.length}</p>
-                    <p className="fs-5 text-dark" style={{ letterSpacing: '0.5px' }}>
+                    <p className="fs-5 text-body" style={{ letterSpacing: '0.5px' }}>
                       {chunk.join(", ")}
                     </p>
 
-                    {/* Chunk practice results */}
                     {chunkResults[index] && (
-                      <div className="mb-3 p-2 border rounded bg-white">
+                      <div className="mb-3 p-2 border rounded bg-body">
                         <div className="small text-muted mb-1">
                           <strong>You said:</strong> {chunkResults[index].transcript || "Nothing"}
                         </div>
@@ -368,9 +353,8 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
                       </div>
                     )}
 
-                    {/* Chunk practice actions */}
                     {activeChunkIndex === index ? (
-                      <div className="mt-2 p-2 border border-danger rounded bg-white">
+                      <div className="mt-2 p-2 border border-danger rounded bg-body">
                         <p className="text-danger fw-bold mb-2">
                           <span className="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
                           Listening: {chunkTranscript}

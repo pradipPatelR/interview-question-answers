@@ -8,15 +8,35 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
-function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpdate, setQuestionAnswerCallback, searchQuery, onSearch, loading }) {
+function AppContent({
+  questionAnswers,
+  filteredQuestionAnswers,
+  onDelete,
+  onUpdate,
+  setQuestionAnswerCallback,
+  searchQuery,
+  onSearch,
+  loading,
+  theme,
+  setTheme
+}) {
   const location = useLocation();
   const showSearchBar = location.pathname === "/" && questionAnswers.length > 0;
 
   return (
     <>
+      <Header
+        title="Interview Questions Answers"
+        searchBar={showSearchBar}
+        searchQuery={searchQuery}
+        onSearch={onSearch}
+        theme={theme}
+        onThemeChange={setTheme}
+      />
+
       <Routes>
         <Route path="/" element={
-          <main className="app-main">
+          <main className="app-main pt-5">
             {loading ? (
               <div className="container d-flex justify-content-center align-items-center min-vh-100">
                 <div className="spinner-border text-primary" role="status">
@@ -30,18 +50,12 @@ function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpda
         } />
 
         <Route path="/about" element={
-          <main className="app-main">
+          <main className="app-main pt-5">
             <About />
           </main>
         } />
       </Routes>
 
-      <Header
-        title="Interview Questions Answers"
-        searchBar={showSearchBar}
-        searchQuery={searchQuery}
-        onSearch={onSearch}
-      />
       <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
       <Footer />
     </>
@@ -52,6 +66,30 @@ function App() {
   const [questionAnswers, setQuestionAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "system");
+
+  // Apply Light / Dark / System mode theme globally
+  useEffect(() => {
+    const applyTheme = () => {
+      const root = document.documentElement;
+      if (theme === "system") {
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.setAttribute("data-bs-theme", systemDark ? "dark" : "light");
+      } else {
+        root.setAttribute("data-bs-theme", theme);
+      }
+    };
+
+    applyTheme();
+    localStorage.setItem("theme", theme);
+
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleSystemChange = () => applyTheme();
+      mediaQuery.addEventListener("change", handleSystemChange);
+      return () => mediaQuery.removeEventListener("change", handleSystemChange);
+    }
+  }, [theme]);
 
   // Fetch only active (non-deleted) questions from Supabase
   const fetchQuestions = async () => {
@@ -147,6 +185,8 @@ function App() {
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
         loading={loading}
+        theme={theme}
+        setTheme={setTheme}
       />
     </Router>
   );
