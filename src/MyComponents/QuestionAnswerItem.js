@@ -1,28 +1,55 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { QuestionAnswerPractice } from "./QuestionAnswerPractice";
 
 export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   const deleteModalId = `deleteModal-${questionAnswer.id}`;
   const editModalId = `editModal-${questionAnswer.id}`;
+  const practiceModalId = `practiceModal-${questionAnswer.id}`;
 
   const [title, setTitle] = useState(questionAnswer.title);
   const [desc, setDesc] = useState(questionAnswer.desc);
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const descRef = useRef(null);
+
   useEffect(() => {
     setTitle(questionAnswer.title);
     setDesc(questionAnswer.desc);
+    setIsExpanded(false);
   }, [questionAnswer]);
+
+  useLayoutEffect(() => {
+    const checkOverflow = () => {
+      if (descRef.current && !isExpanded) {
+        const isOverflowing = descRef.current.scrollHeight > descRef.current.clientHeight;
+        setHasMore(isOverflowing);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [questionAnswer.desc, isExpanded]);
 
   const [isListening, setIsListening] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const recognitionRef = useRef(null);
   const baseValueRef = useRef("");
 
-  // Listen for Bootstrap modal close (including backdrop clicks)
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speakTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
   useEffect(() => {
     const modalElement = document.getElementById(editModalId);
 
     const handleModalHidden = () => {
-      // Stop speech recognition if running
       if (recognitionRef.current) {
         recognitionRef.current.stop();
         recognitionRef.current = null;
@@ -30,7 +57,6 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
       setIsListening(false);
       setActiveField(null);
 
-      // Revert title and desc to original prop values
       setTitle(questionAnswer.title);
       setDesc(questionAnswer.desc);
     };
@@ -61,11 +87,54 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
     setDesc(questionAnswer.desc);
   };
 
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (speakTimeoutRef.current) {
+      clearTimeout(speakTimeoutRef.current);
+      speakTimeoutRef.current = null;
+    }
+    setIsSpeaking(false);
+  };
+
+  const handleSpeakToggle = () => {
+    if (!('speechSynthesis' in window)) {
+      alert("Text-to-Speech is not supported in this browser.");
+      return;
+    }
+
+    if (isSpeaking) {
+      stopSpeaking();
+      return;
+    }
+
+    stopSpeaking();
+    setIsExpanded(true);
+
+    const titleUtterance = new SpeechSynthesisUtterance(questionAnswer.title);
+    const descUtterance = new SpeechSynthesisUtterance(questionAnswer.desc);
+
+    setIsSpeaking(true);
+
+    titleUtterance.onend = () => {
+      speakTimeoutRef.current = setTimeout(() => {
+        window.speechSynthesis.speak(descUtterance);
+      }, 100);
+    };
+
+    titleUtterance.onerror = () => stopSpeaking();
+    descUtterance.onend = () => setIsSpeaking(false);
+    descUtterance.onerror = () => stopSpeaking();
+
+    window.speechSynthesis.speak(titleUtterance);
+  };
+
   const startListening = async (field) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not natively supported in this browser (such as Firefox or Safari). Please use Google Chrome or Microsoft Edge.");
+      alert("Speech recognition is not natively supported in this browser.");
       return;
     }
 
@@ -73,14 +142,11 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      console.error("Microphone permission error:", err);
-      alert("Microphone permission was denied or is unavailable. Please allow microphone access in your browser settings.");
+      alert("Microphone permission was denied.");
       return;
     }
 
-    if (isListening) {
-      stopListening();
-    }
+    if (isListening) stopListening();
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -99,26 +165,12 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
       for (let i = 0; i < event.results.length; i++) {
         currentTranscript += event.results[i][0].transcript;
       }
-
-      const updatedText = baseValueRef.current
-        ? `${baseValueRef.current} ${currentTranscript}`
-        : currentTranscript;
-
-      if (field === 'title') {
-        setTitle(updatedText);
-      } else if (field === 'desc') {
-        setDesc(updatedText);
-      }
+      const updatedText = baseValueRef.current ? `${baseValueRef.current} ${currentTranscript}` : currentTranscript;
+      if (field === 'title') setTitle(updatedText);
+      else if (field === 'desc') setDesc(updatedText);
     };
 
-    recognition.onerror = (event) => {
-      console.error("Speech Recognition Error:", event.error);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        alert("Microphone access was denied or blocked.");
-      }
-      stopListening();
-    };
-
+    recognition.onerror = () => stopListening();
     recognition.onend = () => {
       setIsListening(false);
       setActiveField(null);
@@ -137,18 +189,64 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
   return (
     <div>
-      <div className="card my-3">
+      <div className="card my-3 shadow-sm">
         <div className="card-body">
           <div className="row align-items-start">
-            <div className="col-md-9">
+            <div className="col-md-7">
               <h4>{questionAnswer.title}</h4>
-              <p style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>{questionAnswer.desc}</p>
+              <div>
+                <p
+                  ref={descRef}
+                  style={
+                    !isExpanded
+                      ? {
+                          whiteSpace: 'pre-wrap',
+                          marginBottom: 0,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }
+                      : {
+                          whiteSpace: 'pre-wrap',
+                          marginBottom: 0,
+                        }
+                  }
+                >
+                  {questionAnswer.desc}
+                </p>
+
+                {hasMore && (
+                  <button
+                    className="btn btn-link btn-sm p-0 mt-1 text-decoration-none fw-semibold"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                  >
+                    {isExpanded ? "Read less" : "Read More"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="col-md-3 text-end">
+            <div className="col-md-5 text-end mt-3 mt-md-0">
+              <button
+                className={`btn btn-sm ${isSpeaking ? 'btn-danger' : 'btn-outline-primary'} me-2`}
+                onClick={handleSpeakToggle}
+                title={isSpeaking ? "Stop Speaking" : "Listen to Question & Answer"}
+              >
+                {isSpeaking ? '⏹️ Stop' : '🔊 Listen'}
+              </button>
+              <button
+                className="btn btn-sm btn-success me-2"
+                data-bs-target={`#${practiceModalId}`}
+                data-bs-toggle="modal"
+                onClick={stopSpeaking}
+              >
+                🎤 Practice
+              </button>
               <button
                 className="btn btn-sm btn-primary me-2"
                 data-bs-target={`#${editModalId}`}
                 data-bs-toggle="modal"
+                onClick={stopSpeaking}
               >
                 Edit
               </button>
@@ -156,6 +254,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                 className="btn btn-sm btn-danger" 
                 data-bs-target={`#${deleteModalId}`} 
                 data-bs-toggle="modal"
+                onClick={stopSpeaking}
               >
                 Delete
               </button>
@@ -164,6 +263,13 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
         </div>
       </div>
 
+      {/* Embedded Practice Modal Component */}
+      <QuestionAnswerPractice 
+        questionAnswer={questionAnswer} 
+        modalId={practiceModalId} 
+      />
+
+      {/* Edit Modal */}
       <div className="modal fade" id={editModalId} tabIndex="-1" aria-labelledby={`${editModalId}Label`} aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -275,6 +381,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
         </div>
       </div>
 
+      {/* Delete Modal */}
       <div className="modal fade" id={deleteModalId} aria-labelledby={`${deleteModalId}Label`} tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
