@@ -9,7 +9,7 @@ export const Footer = () => {
   }
   return (
     <footer className="bg-body-tertiary text-body text-center py-3 border-top" style={footerStyle}>
-      <p className="mb-0">Copyright &copy; InterviewQuestionsAnswers-2026.com. All rights reserved.</p>
+      <p className="mb-0">Copyright &copy; https://interview-question-answers.vercel.app/. All rights reserved.</p>
     </footer>
   )
 }
