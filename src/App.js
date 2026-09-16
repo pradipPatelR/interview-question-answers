@@ -2,7 +2,7 @@ import "./App.css";
 import Header from "./MyComponents/Header";
 import { Footer } from "./MyComponents/Footer";
 import { QuestionAnswersList } from "./MyComponents/QuestionAnswersList";
-import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswers";
+import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { About } from "./MyComponents/About";
 import React, { useState, useEffect } from "react";
 import {
@@ -12,7 +12,7 @@ import {
   useLocation
 } from "react-router-dom";
 
-function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpdate, setQuestionAnswersCallback, searchQuery, onSearch }) {
+function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpdate, setQuestionAnswerCallback, searchQuery, onSearch }) {
   const location = useLocation();
   const showSearchBar = location.pathname === "/" && questionAnswers.length > 0;
 
@@ -38,7 +38,7 @@ function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpda
         searchQuery={searchQuery}
         onSearch={onSearch}
       />
-      <AddQuestionAnswer addQuestionAnswer={setQuestionAnswersCallback} />
+      <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
       <Footer />
     </>
   );
@@ -97,7 +97,7 @@ function App() {
     );
   };
 
-  const setQuestionAnswersCallback = (title, desc) => {
+  const setQuestionAnswerCallback = (title, desc) => {
     let sno = questionAnswers.length > 0 ? questionAnswers[questionAnswers.length - 1].sno + 1 : 1;
     const newQuestionAnswer = {
       sno: sno,
@@ -114,7 +114,7 @@ function App() {
         filteredQuestionAnswers={filteredQuestionAnswers}
         onDelete={onDelete}
         onUpdate={onUpdate}
-        setQuestionAnswersCallback={setQuestionAnswersCallback}
+        setQuestionAnswerCallback={setQuestionAnswerCallback}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
       />

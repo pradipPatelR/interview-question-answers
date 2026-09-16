@@ -7,15 +7,13 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   const [title, setTitle] = useState(questionAnswer.title);
   const [desc, setDesc] = useState(questionAnswer.desc);
 
-  // Synchronize state if props change
   useEffect(() => {
     setTitle(questionAnswer.title);
     setDesc(questionAnswer.desc);
   }, [questionAnswer]);
 
-  // Speech-to-Text States & Refs for Edit Modal
   const [isListening, setIsListening] = useState(false);
-  const [activeField, setActiveField] = useState(null); // 'title' | 'desc' | null
+  const [activeField, setActiveField] = useState(null);
   const recognitionRef = useRef(null);
   const baseValueRef = useRef("");
 
@@ -34,11 +32,20 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
     setDesc(questionAnswer.desc);
   };
 
-  const startListening = (field) => {
+  const startListening = async (field) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser. Please try using Google Chrome or Edge.");
+      alert("Speech recognition is not natively supported in this browser (such as Firefox or Safari). Please use Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.error("Microphone permission error:", err);
+      alert("Microphone permission was denied or is unavailable. Please allow microphone access in your browser settings.");
       return;
     }
 
@@ -77,6 +84,9 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
     recognition.onerror = (event) => {
       console.error("Speech Recognition Error:", event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        alert("Microphone access was denied or blocked.");
+      }
       stopListening();
     };
 
@@ -125,7 +135,6 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
         </div>
       </div>
 
-      {/* Edit Question / Answer Modal */}
       <div className="modal fade" id={editModalId} tabIndex="-1" aria-labelledby={`${editModalId}Label`} aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -237,7 +246,6 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <div className="modal fade" id={deleteModalId} aria-labelledby={`${deleteModalId}Label`} tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
