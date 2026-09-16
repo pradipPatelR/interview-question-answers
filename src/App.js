@@ -5,14 +5,10 @@ import { QuestionAnswersList } from "./MyComponents/QuestionAnswersList";
 import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { About } from "./MyComponents/About";
 import React, { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { supabase } from "./supabaseClient";
 
-function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpdate, setQuestionAnswerCallback, searchQuery, onSearch }) {
+function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpdate, setQuestionAnswerCallback, searchQuery, onSearch, loading }) {
   const location = useLocation();
   const showSearchBar = location.pathname === "/" && questionAnswers.length > 0;
 
@@ -21,7 +17,15 @@ function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpda
       <Routes>
         <Route path="/" element={
           <main className="app-main">
-            <QuestionAnswersList questionAnswers={filteredQuestionAnswers} onDelete={onDelete} onUpdate={onUpdate} searchQuery={searchQuery} />
+            {loading ? (
+              <div className="container d-flex justify-content-center align-items-center min-vh-100">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
+              <QuestionAnswersList questionAnswers={filteredQuestionAnswers} onDelete={onDelete} onUpdate={onUpdate} searchQuery={searchQuery} />
+            )}
           </main>
         } />
 
@@ -45,26 +49,30 @@ function AppContent({ questionAnswers, filteredQuestionAnswers, onDelete, onUpda
 }
 
 function App() {
-  // Initialize questionAnswers state directly from localStorage
-  const [questionAnswers, setQuestionAnswers] = useState(() => {
-    const savedQuestionAnswers = localStorage.getItem("questionAnswers");
-    if (savedQuestionAnswers) {
-      try {
-        return JSON.parse(savedQuestionAnswers);
-      } catch (error) {
-        console.error("Error parsing question answers from localStorage:", error);
-        return [];
-      }
-    }
-    return [];
-  });
-
+  const [questionAnswers, setQuestionAnswers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Save questionAnswers to localStorage whenever 'questionAnswers' state updates
+  // Fetch only active (non-deleted) questions from Supabase
+  const fetchQuestions = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('question_answers')
+      .select('*')
+      .eq('is_deleted', false)
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error("Error fetching questions:", error.message);
+    } else {
+      setQuestionAnswers(data || []);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    localStorage.setItem("questionAnswers", JSON.stringify(questionAnswers));
-  }, [questionAnswers]);
+    fetchQuestions();
+  }, []);
 
   // Search Escape Key functionality
   useEffect(() => {
@@ -78,33 +86,54 @@ function App() {
   }, []);
 
   const filteredQuestionAnswers = questionAnswers.filter((questionAnswer) =>
-    questionAnswer.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-    questionAnswer.desc.toLowerCase().includes(searchQuery.toLowerCase())
+    (questionAnswer.title || "").toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+    (questionAnswer.desc || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const onDelete = (questionAnswer) => {
-    setQuestionAnswers(questionAnswers.filter((e) => e !== questionAnswer));
+  // CREATE: Add new item to Supabase
+  const setQuestionAnswerCallback = async (title, desc) => {
+    const { data, error } = await supabase
+      .from('question_answers')
+      .insert([{ title, desc }])
+      .select();
+
+    if (error) {
+      console.error("Error inserting question:", error.message);
+    } else if (data) {
+      setQuestionAnswers((prev) => [...prev, ...data]);
+    }
   };
 
-  const onUpdate = (sno, updatedTitle, updatedDesc) => {
-    setQuestionAnswers(
-      questionAnswers.map((questionAnswer) => {
-        if (questionAnswer.sno === sno) {
-          return { ...questionAnswer, title: updatedTitle, desc: updatedDesc };
-        }
-        return questionAnswer;
-      })
-    );
+  // SOFT DELETE: Flag item as deleted instead of deleting from table
+  const onDelete = async (questionAnswer) => {
+    const { error } = await supabase
+      .from('question_answers')
+      .update({ is_deleted: true })
+      .eq('id', questionAnswer.id);
+
+    if (error) {
+      console.error("Error updating soft delete status:", error.message);
+    } else {
+      setQuestionAnswers((prev) => prev.filter((item) => item.id !== questionAnswer.id));
+    }
   };
 
-  const setQuestionAnswerCallback = (title, desc) => {
-    let sno = questionAnswers.length > 0 ? questionAnswers[questionAnswers.length - 1].sno + 1 : 1;
-    const newQuestionAnswer = {
-      sno: sno,
-      title: title,
-      desc: desc,
-    };
-    setQuestionAnswers([...questionAnswers, newQuestionAnswer]);
+  // UPDATE: Edit item in Supabase
+  const onUpdate = async (id, updatedTitle, updatedDesc) => {
+    const { error } = await supabase
+      .from('question_answers')
+      .update({ title: updatedTitle, desc: updatedDesc })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating question:", error.message);
+    } else {
+      setQuestionAnswers((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, title: updatedTitle, desc: updatedDesc } : item
+        )
+      );
+    }
   };
 
   return (
@@ -117,6 +146,7 @@ function App() {
         setQuestionAnswerCallback={setQuestionAnswerCallback}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
+        loading={loading}
       />
     </Router>
   );

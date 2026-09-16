@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 
 export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
-  const deleteModalId = `deleteModal-${questionAnswer.sno || questionAnswer.id || Math.random().toString(36).substr(2, 9)}`;
-  const editModalId = `editModal-${questionAnswer.sno || questionAnswer.id || Math.random().toString(36).substr(2, 9)}`;
+  const deleteModalId = `deleteModal-${questionAnswer.id}`;
+  const editModalId = `editModal-${questionAnswer.id}`;
 
   const [title, setTitle] = useState(questionAnswer.title);
   const [desc, setDesc] = useState(questionAnswer.desc);
@@ -16,6 +16,35 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   const [activeField, setActiveField] = useState(null);
   const recognitionRef = useRef(null);
   const baseValueRef = useRef("");
+
+  // Listen for Bootstrap modal close (including backdrop clicks)
+  useEffect(() => {
+    const modalElement = document.getElementById(editModalId);
+
+    const handleModalHidden = () => {
+      // Stop speech recognition if running
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setIsListening(false);
+      setActiveField(null);
+
+      // Revert title and desc to original prop values
+      setTitle(questionAnswer.title);
+      setDesc(questionAnswer.desc);
+    };
+
+    if (modalElement) {
+      modalElement.addEventListener("hidden.bs.modal", handleModalHidden);
+    }
+
+    return () => {
+      if (modalElement) {
+        modalElement.removeEventListener("hidden.bs.modal", handleModalHidden);
+      }
+    };
+  }, [editModalId, questionAnswer.title, questionAnswer.desc]);
 
   const stopListening = () => {
     if (recognitionRef.current) {
@@ -103,7 +132,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
   const handleUpdate = () => {
     stopListening();
-    onUpdate(questionAnswer.sno, title, desc);
+    onUpdate(questionAnswer.id, title, desc);
   };
 
   return (
@@ -169,11 +198,11 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="mb-3">
-                  <label htmlFor={`edit-title-${questionAnswer.sno}`} className="col-form-label">Title:</label>
+                  <label htmlFor={`edit-title-${questionAnswer.id}`} className="col-form-label">Title:</label>
                   <div className="input-group">
                     <input 
                       type="text" 
-                      id={`edit-title-${questionAnswer.sno}`}
+                      id={`edit-title-${questionAnswer.id}`}
                       className="form-control" 
                       value={title} 
                       onChange={(e) => setTitle(e.target.value)} 
@@ -196,10 +225,10 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor={`edit-desc-${questionAnswer.sno}`} className="col-form-label">Description:</label>
+                  <label htmlFor={`edit-desc-${questionAnswer.id}`} className="col-form-label">Description:</label>
                   <div className="input-group">
                     <textarea 
-                      id={`edit-desc-${questionAnswer.sno}`}
+                      id={`edit-desc-${questionAnswer.id}`}
                       className="form-control" 
                       rows="4" 
                       value={desc} 

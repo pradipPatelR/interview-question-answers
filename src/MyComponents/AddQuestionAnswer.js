@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // Added useEffect here
 
 export const AddQuestionAnswer = (props) => {
     const [title, setTitle] = useState("");
@@ -9,6 +9,38 @@ export const AddQuestionAnswer = (props) => {
     
     const recognitionRef = useRef(null);
     const baseValueRef = useRef("");
+
+    // --- ADD THIS USEEFFECT BLOCK ---
+    useEffect(() => {
+        const modalElement = document.getElementById('addQuestionAnswerModal');
+        
+        const handleModalHidden = () => {
+            // Stop speech recognition if active
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+                recognitionRef.current = null;
+            }
+            setIsListening(false);
+            setActiveField(null);
+            
+            // Clear inputs
+            setTitle("");
+            setDesc("");
+        };
+
+        // Listen for Bootstrap's native close event
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', handleModalHidden);
+        }
+
+        // Cleanup listener on unmount
+        return () => {
+            if (modalElement) {
+                modalElement.removeEventListener('hidden.bs.modal', handleModalHidden);
+            }
+        };
+    }, []);
+    // --------------------------------
 
     const stopListening = () => {
         if (recognitionRef.current) {

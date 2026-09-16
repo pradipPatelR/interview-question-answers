@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { QuestionAnswerItem } from "./QuestionAnswerItem";
 
 export const QuestionAnswersList = (props) => {
@@ -45,7 +45,7 @@ export const QuestionAnswersList = (props) => {
   };
 
   return (
-    <div className="container mb-5 pb-4">
+    <div className="container mb-5 pb-5">
       <h3 className="my-3 text-center">Interview Questions Answers</h3>
 
       {props.questionAnswers.length === 0 ? (
@@ -61,14 +61,14 @@ export const QuestionAnswersList = (props) => {
           {currentQuestionAnswers.map((questionAnswer) => (
             <QuestionAnswerItem 
               questionAnswer={questionAnswer} 
-              key={questionAnswer.sno} 
+              key={questionAnswer.id} 
               onDelete={props.onDelete} 
               onUpdate={props.onUpdate} 
             />
           ))}
 
           {props.questionAnswers.length > 10 ? (
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 mb-4 gap-3">
             <div className="d-flex align-items-center">
               <label htmlFor="itemsPerPage" className="me-2 fw-semibold text-nowrap mb-0">
                 Show questions:
