@@ -10,7 +10,6 @@ import { supabase } from "./supabaseClient";
 
 function AppContent({
   questionAnswers,
-  filteredQuestionAnswers,
   onDelete,
   onUpdate,
   setQuestionAnswerCallback,
@@ -18,10 +17,15 @@ function AppContent({
   onSearch,
   loading,
   theme,
-  setTheme
+  setTheme,
+  currentPage,
+  itemsPerPage,
+  totalCount,
+  setCurrentPage,
+  setItemsPerPage
 }) {
   const location = useLocation();
-  const showSearchBar = location.pathname === "/" && questionAnswers.length > 0;
+  const showSearchBar = location.pathname === "/";
 
   return (
     <>
@@ -44,7 +48,17 @@ function AppContent({
                 </div>
               </div>
             ) : (
-              <QuestionAnswersList questionAnswers={filteredQuestionAnswers} onDelete={onDelete} onUpdate={onUpdate} searchQuery={searchQuery} />
+              <QuestionAnswersList 
+                questionAnswers={questionAnswers} 
+                onDelete={onDelete} 
+                onUpdate={onUpdate} 
+                searchQuery={searchQuery}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalCount={totalCount}
+                setCurrentPage={setCurrentPage}
+                setItemsPerPage={setItemsPerPage}
+              />
             )}
           </main>
         } />
@@ -65,8 +79,13 @@ function AppContent({
 function App() {
   const [questionAnswers, setQuestionAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "system");
+  
+  // Server-side Pagination & Search States
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Apply Light / Dark / System mode theme globally
   useEffect(() => {
@@ -91,54 +110,67 @@ function App() {
     }
   }, [theme]);
 
-  // Fetch only active (non-deleted) questions from Supabase
+  // Fetch paginated and searched questions from Supabase
   const fetchQuestions = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    let query = supabase
       .from('question_answers')
-      .select('*')
-      .eq('is_deleted', false)
-      .order('id', { ascending: true });
+      .select('*', { count: 'exact' })
+      .eq('is_deleted', false);
+
+    // Apply search filter if present
+    if (appliedSearchQuery.trim() !== "") {
+      query = query.or(`title.ilike.%${appliedSearchQuery}%,desc.ilike.%${appliedSearchQuery}%`);
+    }
+
+    // Apply pagination
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+    query = query.order('id', { ascending: true }).range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error("Error fetching questions:", error.message);
     } else {
       setQuestionAnswers(data || []);
+      setTotalCount(count || 0);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, itemsPerPage, appliedSearchQuery]);
+
+  const handleSearch = (query) => {
+    setAppliedSearchQuery(query);
+    setCurrentPage(1); // Reset to first page on new search
+  };
 
   // Search Escape Key functionality
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        setSearchQuery("");
+        handleSearch("");
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const filteredQuestionAnswers = questionAnswers.filter((questionAnswer) =>
-    (questionAnswer.title || "").toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-    (questionAnswer.desc || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   // CREATE: Add new item to Supabase
   const setQuestionAnswerCallback = async (title, desc) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('question_answers')
-      .insert([{ title, desc }])
-      .select();
+      .insert([{ title, desc }]);
 
     if (error) {
       console.error("Error inserting question:", error.message);
-    } else if (data) {
-      setQuestionAnswers((prev) => [...prev, ...data]);
+    } else {
+      fetchQuestions(); // Refresh list to get updated count and pagination
     }
   };
 
@@ -152,7 +184,7 @@ function App() {
     if (error) {
       console.error("Error updating soft delete status:", error.message);
     } else {
-      setQuestionAnswers((prev) => prev.filter((item) => item.id !== questionAnswer.id));
+      fetchQuestions(); // Refresh to reflect deletion in current page view
     }
   };
 
@@ -166,11 +198,7 @@ function App() {
     if (error) {
       console.error("Error updating question:", error.message);
     } else {
-      setQuestionAnswers((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, title: updatedTitle, desc: updatedDesc } : item
-        )
-      );
+      fetchQuestions();
     }
   };
 
@@ -178,15 +206,19 @@ function App() {
     <Router>
       <AppContent
         questionAnswers={questionAnswers}
-        filteredQuestionAnswers={filteredQuestionAnswers}
         onDelete={onDelete}
         onUpdate={onUpdate}
         setQuestionAnswerCallback={setQuestionAnswerCallback}
-        searchQuery={searchQuery}
-        onSearch={setSearchQuery}
+        searchQuery={appliedSearchQuery}
+        onSearch={handleSearch}
         loading={loading}
         theme={theme}
         setTheme={setTheme}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        totalCount={totalCount}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
       />
     </Router>
   );

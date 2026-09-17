@@ -39,6 +39,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const speakTimeoutRef = useRef(null);
+  const isSpeakingRef = useRef(false); // ADD THIS REF
 
   useEffect(() => {
     return () => {
@@ -88,6 +89,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   };
 
   const stopSpeaking = () => {
+    isSpeakingRef.current = false; // Synchronously mark as stopped
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -116,15 +118,24 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
     const descUtterance = new SpeechSynthesisUtterance(questionAnswer.desc);
 
     setIsSpeaking(true);
+    isSpeakingRef.current = true; // Mark as speaking
 
     titleUtterance.onend = () => {
+      // Abort if the user manually clicked the Stop button
+      if (!isSpeakingRef.current) return; 
+
       speakTimeoutRef.current = setTimeout(() => {
         window.speechSynthesis.speak(descUtterance);
       }, 100);
     };
 
     titleUtterance.onerror = () => stopSpeaking();
-    descUtterance.onend = () => setIsSpeaking(false);
+    
+    descUtterance.onend = () => {
+      setIsSpeaking(false);
+      isSpeakingRef.current = false;
+    };
+    
     descUtterance.onerror = () => stopSpeaking();
 
     window.speechSynthesis.speak(titleUtterance);

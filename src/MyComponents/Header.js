@@ -1,14 +1,26 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from "react-router-dom";
 
 export default function Header(props) {
+  const [searchInput, setSearchInput] = useState(props.searchQuery || "");
+
+  // Sync local input with parent search query (e.g., if cleared by Escape key)
+  useEffect(() => {
+    setSearchInput(props.searchQuery || "");
+  }, [props.searchQuery]);
+
   let headerStyle = {
     position: "fixed",
     top: "0",
     width: "100%",
     zIndex: 1030
   }
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    props.onSearch(searchInput);
+  };
 
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom" style={headerStyle}>
@@ -31,7 +43,7 @@ export default function Header(props) {
           </ul>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            {/* Theme Selector (Placed before Search Bar) */}
+            {/* Theme Selector */}
             <div className="d-flex align-items-center me-lg-2">
               <select
                 className="form-select form-select-sm"
@@ -46,14 +58,14 @@ export default function Header(props) {
             </div>
 
             {props.searchBar && (
-              <form className="d-flex" role="search" onSubmit={(e) => e.preventDefault()}>
+              <form className="d-flex" role="search" onSubmit={handleSearchSubmit}>
                 <input
                   className="form-control me-2 form-control-sm"
                   type="search"
                   placeholder="Search..."
                   aria-label="Search"
-                  value={props.searchQuery}
-                  onChange={(e) => props.onSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                 />
                 <button className="btn btn-sm btn-outline-primary" type="submit">Search</button>
               </form>
