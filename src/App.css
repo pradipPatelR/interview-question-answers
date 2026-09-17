@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+
+[data-bs-theme="dark"] .icon-theme-adaptive {
+  filter: brightness(0) invert(1);
+}

@@ -241,33 +241,62 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
               <button
                 className={`btn btn-sm ${isSpeaking ? 'btn-danger' : 'btn-outline-primary'} me-2`}
                 onClick={handleSpeakToggle}
-                title={isSpeaking ? "Stop Speaking" : "Listen to Question & Answer"}
+                title={isSpeaking ? "Stop" : "Listen"}
               >
-                {isSpeaking ? '⏹️ Stop' : '🔊 Listen'}
+                {isSpeaking ? (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/icon/ic_volume_up.png'} 
+                    alt="Stop"
+                    className="icon-theme-adaptive"
+                    style={{ width: '20px', height: '20px' }} 
+                  />
+                ) : (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/icon/ic_volume.png'} 
+                    alt="Listen" 
+                    className="icon-theme-adaptive"
+                    style={{ width: '20px', height: '20px' }} 
+                  />
+                )}
               </button>
               <button
                 className="btn btn-sm btn-success me-2"
                 data-bs-target={`#${practiceModalId}`}
                 data-bs-toggle="modal"
                 onClick={stopSpeaking}
+                title="Practice"
               >
-                🎤 Practice
+                <img 
+                  src={process.env.PUBLIC_URL + '/icon/ic_mic.png'} 
+                  alt="Practice"
+                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
+                />
               </button>
               <button
                 className="btn btn-sm btn-primary me-2"
                 data-bs-target={`#${editModalId}`}
                 data-bs-toggle="modal"
                 onClick={stopSpeaking}
+                title="Edit"
               >
-                Edit
+                <img 
+                  src={process.env.PUBLIC_URL + '/icon/ic_pencil.png'} 
+                  alt="Edit"
+                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
+                />
               </button>
               <button
                 className="btn btn-sm btn-danger" 
                 data-bs-target={`#${deleteModalId}`} 
                 data-bs-toggle="modal"
                 onClick={stopSpeaking}
+                title="Delete"
               >
-                Delete
+                <img 
+                  src={process.env.PUBLIC_URL + '/icon/ic_trash_can.png'} 
+                  alt="Delete"
+                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
+                />
               </button>
             </div>
           </div>
