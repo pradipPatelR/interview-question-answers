@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Header(props) {
   const [searchInput, setSearchInput] = useState(props.searchQuery || "");
+  const location = useLocation();
 
   // Sync local input with parent search query (e.g., if cleared by Escape key)
   useEffect(() => {
@@ -32,14 +33,21 @@ export default function Header(props) {
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <Link className="nav-link active" aria-current="page" to="/">Home</Link>
+              <Link className={`nav-link ${location.pathname === '/' ? 'active fw-bold' : ''}`} aria-current="page" to="/">Home</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link active" to="/about">About</Link>
+              <Link className={`nav-link ${location.pathname === '/questions' ? 'active fw-bold' : ''}`} to="/questions">Questions</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link active" data-bs-toggle="modal" data-bs-target="#addQuestionAnswerModal" to="/">Add Q/A</Link>
+              <Link className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`} to="/about">About</Link>
             </li>
+            
+            {/* Render "Add Q/A" ONLY when the prop is true (on the Questions page) */}
+            {props.showAddQA && (
+              <li className="nav-item">
+                <Link className="nav-link text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addQuestionAnswerModal" to="/questions">+ Add Q/A</Link>
+              </li>
+            )}
           </ul>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -80,6 +88,7 @@ export default function Header(props) {
 Header.propTypes = {
   title: PropTypes.string,
   searchBar: PropTypes.bool.isRequired,
+  showAddQA: PropTypes.bool.isRequired,
   searchQuery: PropTypes.string,
   onSearch: PropTypes.func,
   theme: PropTypes.string.isRequired,

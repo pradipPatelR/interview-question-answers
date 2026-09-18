@@ -39,7 +39,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const speakTimeoutRef = useRef(null);
-  const isSpeakingRef = useRef(false); // ADD THIS REF
+  const isSpeakingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -89,7 +89,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   };
 
   const stopSpeaking = () => {
-    isSpeakingRef.current = false; // Synchronously mark as stopped
+    isSpeakingRef.current = false;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -118,10 +118,9 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
     const descUtterance = new SpeechSynthesisUtterance(questionAnswer.desc);
 
     setIsSpeaking(true);
-    isSpeakingRef.current = true; // Mark as speaking
+    isSpeakingRef.current = true;
 
     titleUtterance.onend = () => {
-      // Abort if the user manually clicked the Stop button
       if (!isSpeakingRef.current) return; 
 
       speakTimeoutRef.current = setTimeout(() => {
@@ -200,19 +199,19 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
 
   return (
     <div>
-      <div className="card my-3 shadow-sm">
-        <div className="card-body">
-          <div className="row align-items-start">
-            <div className="col-md-7">
-              <h4>{questionAnswer.title}</h4>
+      <div className="card my-3 shadow-sm border">
+        <div className="card-body p-3 p-md-4">
+          <div className="row align-items-start g-3">
+            <div className="col-md-8">
+              <h5 className="fw-bold mb-2">{questionAnswer.title}</h5>
               <div>
                 <p
                   ref={descRef}
+                  className="text-body-secondary mb-0"
                   style={
                     !isExpanded
                       ? {
                           whiteSpace: 'pre-wrap',
-                          marginBottom: 0,
                           display: '-webkit-box',
                           WebkitLineClamp: 3,
                           WebkitBoxOrient: 'vertical',
@@ -220,7 +219,6 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                         }
                       : {
                           whiteSpace: 'pre-wrap',
-                          marginBottom: 0,
                         }
                   }
                 >
@@ -237,79 +235,83 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                 )}
               </div>
             </div>
-            <div className="col-md-5 text-end mt-3 mt-md-0">
-              <button
-                className={`btn btn-sm ${isSpeaking ? 'btn-danger' : 'btn-outline-primary'} me-2`}
-                onClick={handleSpeakToggle}
-                title={isSpeaking ? "Stop" : "Listen"}
-              >
-                {isSpeaking ? (
+
+            <div className="col-md-4 text-md-end text-start pt-2 pt-md-0">
+              <div className="d-flex flex-wrap gap-2 justify-content-md-end justify-content-start">
+                <button
+                  className={`btn btn-sm ${isSpeaking ? 'btn-danger' : 'btn-outline-primary'}`}
+                  onClick={handleSpeakToggle}
+                  title={isSpeaking ? "Stop" : "Listen"}
+                >
+                  {isSpeaking ? (
+                    <img 
+                      src={process.env.PUBLIC_URL + '/icon/ic_volume_up.png'} 
+                      alt="Stop"
+                      className="icon-theme-adaptive"
+                      style={{ width: '18px', height: '18px' }} 
+                    />
+                  ) : (
+                    <img 
+                      src={process.env.PUBLIC_URL + '/icon/ic_volume.png'} 
+                      alt="Listen" 
+                      className="icon-theme-adaptive"
+                      style={{ width: '18px', height: '18px' }} 
+                    />
+                  )}
+                </button>
+
+                <button
+                  className="btn btn-sm btn-success"
+                  data-bs-target={`#${practiceModalId}`}
+                  data-bs-toggle="modal"
+                  onClick={stopSpeaking}
+                  title="Practice"
+                >
                   <img 
-                    src={process.env.PUBLIC_URL + '/icon/ic_volume_up.png'} 
-                    alt="Stop"
-                    className="icon-theme-adaptive"
-                    style={{ width: '20px', height: '20px' }} 
+                    src={process.env.PUBLIC_URL + '/icon/ic_mic.png'} 
+                    alt="Practice"
+                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
                   />
-                ) : (
+                </button>
+
+                <button
+                  className="btn btn-sm btn-primary"
+                  data-bs-target={`#${editModalId}`}
+                  data-bs-toggle="modal"
+                  onClick={stopSpeaking}
+                  title="Edit"
+                >
                   <img 
-                    src={process.env.PUBLIC_URL + '/icon/ic_volume.png'} 
-                    alt="Listen" 
-                    className="icon-theme-adaptive"
-                    style={{ width: '20px', height: '20px' }} 
+                    src={process.env.PUBLIC_URL + '/icon/ic_pencil.png'} 
+                    alt="Edit"
+                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
                   />
-                )}
-              </button>
-              <button
-                className="btn btn-sm btn-success me-2"
-                data-bs-target={`#${practiceModalId}`}
-                data-bs-toggle="modal"
-                onClick={stopSpeaking}
-                title="Practice"
-              >
-                <img 
-                  src={process.env.PUBLIC_URL + '/icon/ic_mic.png'} 
-                  alt="Practice"
-                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
-                />
-              </button>
-              <button
-                className="btn btn-sm btn-primary me-2"
-                data-bs-target={`#${editModalId}`}
-                data-bs-toggle="modal"
-                onClick={stopSpeaking}
-                title="Edit"
-              >
-                <img 
-                  src={process.env.PUBLIC_URL + '/icon/ic_pencil.png'} 
-                  alt="Edit"
-                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
-                />
-              </button>
-              <button
-                className="btn btn-sm btn-danger" 
-                data-bs-target={`#${deleteModalId}`} 
-                data-bs-toggle="modal"
-                onClick={stopSpeaking}
-                title="Delete"
-              >
-                <img 
-                  src={process.env.PUBLIC_URL + '/icon/ic_trash_can.png'} 
-                  alt="Delete"
-                  style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} 
-                />
-              </button>
+                </button>
+
+                <button
+                  className="btn btn-sm btn-danger" 
+                  data-bs-target={`#${deleteModalId}`} 
+                  data-bs-toggle="modal"
+                  onClick={stopSpeaking}
+                  title="Delete"
+                >
+                  <img 
+                    src={process.env.PUBLIC_URL + '/icon/ic_trash_can.png'} 
+                    alt="Delete"
+                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Embedded Practice Modal Component */}
       <QuestionAnswerPractice 
         questionAnswer={questionAnswer} 
         modalId={practiceModalId} 
       />
 
-      {/* Edit Modal */}
       <div className="modal fade" id={editModalId} tabIndex="-1" aria-labelledby={`${editModalId}Label`} aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -421,7 +423,6 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
         </div>
       </div>
 
-      {/* Delete Modal */}
       <div className="modal fade" id={deleteModalId} aria-labelledby={`${deleteModalId}Label`} tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">

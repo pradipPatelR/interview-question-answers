@@ -4,6 +4,7 @@ import { Footer } from "./MyComponents/Footer";
 import { QuestionAnswersList } from "./MyComponents/QuestionAnswersList";
 import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { About } from "./MyComponents/About";
+import { Home } from "./MyComponents/Home"; // Imported new Home component
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
@@ -25,13 +26,15 @@ function AppContent({
   setItemsPerPage
 }) {
   const location = useLocation();
-  const showSearchBar = location.pathname === "/";
+  // Check if user is currently on the Questions tab
+  const isOnQuestionsPage = location.pathname === "/questions";
 
   return (
     <>
       <Header
         title="Interview Questions Answers"
-        searchBar={showSearchBar}
+        searchBar={isOnQuestionsPage} // Only show search on Questions tab
+        showAddQA={isOnQuestionsPage} // Only show Add Q/A on Questions tab
         searchQuery={searchQuery}
         onSearch={onSearch}
         theme={theme}
@@ -39,7 +42,15 @@ function AppContent({
       />
 
       <Routes>
+        {/* New Welcome Home Page */}
         <Route path="/" element={
+          <main className="app-main pt-5">
+            <Home />
+          </main>
+        } />
+
+        {/* Moved Questions List to /questions */}
+        <Route path="/questions" element={
           <main className="app-main pt-5">
             {loading ? (
               <div className="container d-flex justify-content-center align-items-center min-vh-100">
