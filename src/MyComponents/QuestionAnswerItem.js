@@ -244,19 +244,9 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                   title={isSpeaking ? "Stop" : "Listen"}
                 >
                   {isSpeaking ? (
-                    <img 
-                      src={process.env.PUBLIC_URL + '/icon/ic_volume_up.png'} 
-                      alt="Stop"
-                      className="icon-theme-adaptive"
-                      style={{ width: '18px', height: '18px' }} 
-                    />
+                    <i className="fa fa-stop" style={{ fontSize: '18px' }}></i>
                   ) : (
-                    <img 
-                      src={process.env.PUBLIC_URL + '/icon/ic_volume.png'} 
-                      alt="Listen" 
-                      className="icon-theme-adaptive"
-                      style={{ width: '18px', height: '18px' }} 
-                    />
+                    <i className="fa fa-volume-up" style={{ fontSize: '18px' }}></i>
                   )}
                 </button>
 
@@ -267,11 +257,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                   onClick={stopSpeaking}
                   title="Practice"
                 >
-                  <img 
-                    src={process.env.PUBLIC_URL + '/icon/ic_mic.png'} 
-                    alt="Practice"
-                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
-                  />
+                  <i className="fa fa-microphone" style={{ fontSize: '18px' }}></i>
                 </button>
 
                 <button
@@ -281,11 +267,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                   onClick={stopSpeaking}
                   title="Edit"
                 >
-                  <img 
-                    src={process.env.PUBLIC_URL + '/icon/ic_pencil.png'} 
-                    alt="Edit"
-                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
-                  />
+                  <i className="fa fa-pencil" style={{ fontSize: '18px' }}></i>
                 </button>
 
                 <button
@@ -295,11 +277,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                   onClick={stopSpeaking}
                   title="Delete"
                 >
-                  <img 
-                    src={process.env.PUBLIC_URL + '/icon/ic_trash_can.png'} 
-                    alt="Delete"
-                    style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)' }} 
-                  />
+                  <i className="fa fa-trash" style={{ fontSize: '18px' }}></i>
                 </button>
               </div>
             </div>
@@ -367,7 +345,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                       }}
                       title="Speak to enter title"
                     >
-                      🎤
+                      <i className="fa fa-microphone"></i>
                     </button>
                   </div>
                 </div>
@@ -394,7 +372,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                       }}
                       title="Speak to enter description"
                     >
-                      🎤
+                      <i className="fa fa-microphone"></i>
                     </button>
                   </div>
                 </div>

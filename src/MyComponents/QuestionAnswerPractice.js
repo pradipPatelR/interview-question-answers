@@ -295,7 +295,7 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
                   onClick={startPractice}
                   disabled={activeChunkIndex !== null}
                 >
-                  🎤 Start Recording
+                  <i className="fa fa-microphone"></i> Start Recording
                 </button>
               )}
             </div>
@@ -372,7 +372,7 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
                         onClick={() => startChunkPractice(index)}
                         disabled={isPracticing || (activeChunkIndex !== null && activeChunkIndex !== index)}
                       >
-                        🎤 Practice {chunk.length} words
+                        <i className="fa fa-microphone"></i> Practice {chunk.length} words
                       </button>
                     )}
                   </div>

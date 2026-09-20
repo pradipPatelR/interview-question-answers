@@ -4,7 +4,9 @@ import { Footer } from "./MyComponents/Footer";
 import { QuestionAnswersList } from "./MyComponents/QuestionAnswersList";
 import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { About } from "./MyComponents/About";
-import { Home } from "./MyComponents/Home"; // Imported new Home component
+import { Home } from "./MyComponents/Home"; 
+import { LoginRegisterModal } from "./MyComponents/LoginRegisterModal";
+import { ResetPassword } from "./MyComponents/ResetPassword";
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
@@ -28,6 +30,7 @@ function AppContent({
   const location = useLocation();
   // Check if user is currently on the Questions tab
   const isOnQuestionsPage = location.pathname === "/questions";
+  const isResetPasswordPage = location.pathname === "/reset-password";
 
   return (
     <>
@@ -39,6 +42,7 @@ function AppContent({
         onSearch={onSearch}
         theme={theme}
         onThemeChange={setTheme}
+        minimal={isResetPasswordPage}
       />
 
       <Routes>
@@ -79,10 +83,16 @@ function AppContent({
             <About />
           </main>
         } />
+        <Route path="/reset-password" element={
+          <main className="app-main pt-5">
+            <ResetPassword />
+          </main>
+        } />
       </Routes>
 
       <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
-      <Footer />
+      <LoginRegisterModal />
+      {!isResetPasswordPage && <Footer />}
     </>
   );
 }

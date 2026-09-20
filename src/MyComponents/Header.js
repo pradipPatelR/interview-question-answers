@@ -6,7 +6,6 @@ export default function Header(props) {
   const [searchInput, setSearchInput] = useState(props.searchQuery || "");
   const location = useLocation();
 
-  // Sync local input with parent search query (e.g., if cleared by Escape key)
   useEffect(() => {
     setSearchInput(props.searchQuery || "");
   }, [props.searchQuery]);
@@ -22,6 +21,16 @@ export default function Header(props) {
     e.preventDefault();
     props.onSearch(searchInput);
   };
+
+  if (props.minimal) {
+    return (
+      <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom" style={headerStyle}>
+        <div className="container-fluid d-flex justify-content-center">
+          <Link className="navbar-brand fw-bold m-0" to="/">{props.title}</Link>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary border-bottom" style={headerStyle}>
@@ -42,7 +51,6 @@ export default function Header(props) {
               <Link className={`nav-link ${location.pathname === '/about' ? 'active fw-bold' : ''}`} to="/about">About</Link>
             </li>
             
-            {/* Render "Add Q/A" ONLY when the prop is true (on the Questions page) */}
             {props.showAddQA && (
               <li className="nav-item">
                 <Link className="nav-link text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addQuestionAnswerModal" to="/questions">+ Add Q/A</Link>
@@ -51,18 +59,34 @@ export default function Header(props) {
           </ul>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            {/* Theme Selector */}
-            <div className="d-flex align-items-center me-lg-2">
-              <select
-                className="form-select form-select-sm"
-                value={props.theme}
-                onChange={(e) => props.onThemeChange(e.target.value)}
-                aria-label="Theme mode selector"
+            <div className="dropdown me-lg-2">
+              <button 
+                className="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" 
+                type="button" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false"
               >
-                <option value="light">☀️ Light</option>
-                <option value="dark">🌙 Dark</option>
-                <option value="system">💻 System</option>
-              </select>
+                {props.theme === 'light' && <><i className="fa fa-sun-o"></i> Light</>}
+                {props.theme === 'dark' && <><i className="fa fa-moon-o"></i> Dark</>}
+                {props.theme === 'system' && <><i className="fa fa-desktop"></i> System</>}
+              </button>
+              <ul className="dropdown-menu dropdown-menu-end shadow-sm" style={{ minWidth: 'auto' }}>
+                <li>
+                  <button className={`dropdown-item ${props.theme === 'light' ? 'active' : ''}`} onClick={() => props.onThemeChange('light')}>
+                    <i className="fa fa-sun-o me-2"></i> Light
+                  </button>
+                </li>
+                <li>
+                  <button className={`dropdown-item ${props.theme === 'dark' ? 'active' : ''}`} onClick={() => props.onThemeChange('dark')}>
+                    <i className="fa fa-moon-o me-2"></i> Dark
+                  </button>
+                </li>
+                <li>
+                  <button className={`dropdown-item ${props.theme === 'system' ? 'active' : ''}`} onClick={() => props.onThemeChange('system')}>
+                    <i className="fa fa-desktop me-2"></i> System
+                  </button>
+                </li>
+              </ul>
             </div>
 
             {props.searchBar && (
@@ -78,6 +102,11 @@ export default function Header(props) {
                 <button className="btn btn-sm btn-outline-primary" type="submit">Search</button>
               </form>
             )}
+
+            {/* New Login/Register Button */}
+            <button className="btn btn-sm btn-outline-success fw-bold ms-lg-2" data-bs-toggle="modal" data-bs-target="#loginRegisterModal">
+              Login / Register
+            </button>
           </div>
         </div>
       </div>
@@ -92,5 +121,6 @@ Header.propTypes = {
   searchQuery: PropTypes.string,
   onSearch: PropTypes.func,
   theme: PropTypes.string.isRequired,
-  onThemeChange: PropTypes.func.isRequired
+  onThemeChange: PropTypes.func.isRequired,
+  minimal: PropTypes.bool
 }
