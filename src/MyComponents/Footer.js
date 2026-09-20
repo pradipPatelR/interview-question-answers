@@ -11,11 +11,13 @@ export const Footer = () => {
     isExecuted.current = true;
 
     const handleVisitCount = async () => {
-      const hasVisitedSession = sessionStorage.getItem('has_visited_session');
+      const hasVisited = document.cookie.split('; ').find(row => row.startsWith('has_visited='));
 
-      if (!hasVisitedSession) {
+      if (!hasVisited) {
         // Set flag synchronously BEFORE initiating the async database call
-        sessionStorage.setItem('has_visited_session', 'true');
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        document.cookie = `has_visited=true; expires=${endOfDay.toUTCString()}; path=/`;
 
         const { data, error } = await supabase.rpc('increment_page_visit', {
           page_name_input: 'global',
