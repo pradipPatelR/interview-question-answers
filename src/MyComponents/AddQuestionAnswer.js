@@ -61,11 +61,24 @@ export const AddQuestionAnswer = (props) => {
         if (e.key === 'Escape') clearForm();
     };
 
-    const startListening = (field) => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const startListening = async (field) => {
+        // 1. Add all browser vendor prefixes
+        const SpeechRecognition = window.SpeechRecognition || 
+                                  window.webkitSpeechRecognition || 
+                                  window.mozSpeechRecognition || 
+                                  window.msSpeechRecognition;
 
         if (!SpeechRecognition) {
-            alert("Speech recognition is not supported in this browser. Please try using Google Chrome or Edge.");
+            alert("Speech recognition is not natively supported in this browser. Please try using Google Chrome, Edge, or Safari.");
+            return;
+        }
+
+        // 2. Explicitly ask for microphone permission before starting
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+            alert("Microphone permission was denied. Please allow microphone access to use this feature.");
             return;
         }
 

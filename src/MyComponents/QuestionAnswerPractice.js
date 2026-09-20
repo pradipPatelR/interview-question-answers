@@ -48,10 +48,13 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
   };
 
   const startPractice = async () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || 
+                              window.webkitSpeechRecognition || 
+                              window.mozSpeechRecognition || 
+                              window.msSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not natively supported in this browser. Please use Google Chrome or Microsoft Edge.");
+      alert("Speech recognition is not natively supported in this browser. Please use Google Chrome, Edge, or Safari.");
       return;
     }
 
@@ -59,7 +62,7 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      alert("Microphone permission was denied.");
+      alert("Microphone permission was denied. Please allow access in your browser settings.");
       return;
     }
 
@@ -140,10 +143,13 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
   };
 
   const startChunkPractice = async (index) => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || 
+                              window.webkitSpeechRecognition || 
+                              window.mozSpeechRecognition || 
+                              window.msSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not natively supported.");
+      alert("Speech recognition is not natively supported in this browser. Please use Google Chrome, Edge, or Safari.");
       return;
     }
 
@@ -151,7 +157,7 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      alert("Microphone permission was denied.");
+      alert("Microphone permission was denied. Please allow access in your browser settings.");
       return;
     }
 

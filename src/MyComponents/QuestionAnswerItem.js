@@ -141,10 +141,13 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
   };
 
   const startListening = async (field) => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || 
+                              window.webkitSpeechRecognition || 
+                              window.mozSpeechRecognition || 
+                              window.msSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Speech recognition is not natively supported in this browser.");
+      alert("Speech recognition is not natively supported in this browser. Please try using Google Chrome, Edge, or Safari.");
       return;
     }
 
@@ -152,7 +155,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      alert("Microphone permission was denied.");
+      alert("Microphone permission was denied. Please allow access in your browser settings.");
       return;
     }
 
