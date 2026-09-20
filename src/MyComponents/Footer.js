@@ -15,9 +15,9 @@ export const Footer = () => {
 
       if (!hasVisited) {
         // Set flag synchronously BEFORE initiating the async database call
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-        document.cookie = `has_visited=true; expires=${endOfDay.toUTCString()}; path=/`;
+        const expiryDate = new Date();
+        expiryDate.setHours(24, 0, 0, 0); // Expires exactly at midnight (start of the next day)
+        document.cookie = `has_visited=true; expires=${expiryDate.toUTCString()}; path=/`;
 
         const { data, error } = await supabase.rpc('increment_page_visit', {
           page_name_input: 'global',

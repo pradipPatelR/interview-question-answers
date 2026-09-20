@@ -14,13 +14,13 @@ export const About = () => {
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <div className="p-3 border rounded-3 bg-body-tertiary h-100" style={{ borderRadius: '12px' }}>
-                  <h6 className="fw-bold">🎙️ Real-time Practice</h6>
+                  <h6 className="fw-bold"><i className="fa fa-microphone me-2"></i> Real-time Practice</h6>
                   <p className="small text-muted mb-0">Speak your answers and test your accuracy percentage live against target answers.</p>
                 </div>
               </div>
               <div className="col-md-6">
                 <div className="p-3 border rounded-3 bg-body-tertiary h-100" style={{ borderRadius: '12px' }}>
-                  <h6 className="fw-bold">☁️ Cloud Persistence</h6>
+                  <h6 className="fw-bold"><i className="fa fa-cloud me-2"></i> Cloud Persistence</h6>
                   <p className="small text-muted mb-0">Your questions are saved securely via Supabase backend integration.</p>
                 </div>
               </div>
