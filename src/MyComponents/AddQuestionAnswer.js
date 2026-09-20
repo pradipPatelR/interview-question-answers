@@ -158,7 +158,7 @@ export const AddQuestionAnswer = (props) => {
                                         onClick={() => isListening && activeField === 'title' ? stopListening() : startListening('title')}
                                         title="Speak to enter title"
                                     >
-                                        🎙️
+                                        <i className="fa fa-microphone"></i>
                                     </button>
                                 </div>
                             </div>
@@ -177,7 +177,7 @@ export const AddQuestionAnswer = (props) => {
                                         onClick={() => isListening && activeField === 'desc' ? stopListening() : startListening('desc')}
                                         title="Speak to enter description"
                                     >
-                                        🎙️
+                                        <i className="fa fa-microphone"></i>
                                     </button>
                                 </div>
                             </div>
