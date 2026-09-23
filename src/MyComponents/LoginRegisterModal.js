@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
 export const LoginRegisterModal = () => {
-    const [activeTab, setActiveTab] = useState('login'); // 'login' or 'register'
+    const [activeTab, setActiveTab] = useState('login');
 
     // Login Form State
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
     const [showLoginPassword, setShowLoginPassword] = useState(false);
 
     // Register Form State
@@ -19,10 +18,13 @@ export const LoginRegisterModal = () => {
     const [showRegPassword, setShowRegPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Validation Helpers
+    // UI Response Feedback
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    // Button Enable/Disable Logic
     const isLoginValid = isValidEmail(loginEmail) && loginPassword.trim().length > 0;
     const isRegisterValid = 
         firstName.trim().length > 0 &&
@@ -31,37 +33,105 @@ export const LoginRegisterModal = () => {
         regPassword.trim().length > 0 &&
         regPassword === confirmPassword;
 
-    const navigate = useNavigate();
+    const closeModal = () => {
+        const closeBtn = document.querySelector('#loginRegisterModal .btn-close');
+        if (closeBtn) closeBtn.click();
+        resetForm();
+    };
 
-    // Forgot Password Logic (Requires valid email to trigger)
-    const handleForgotPassword = () => {
-        if (isValidEmail(loginEmail)) {
-            // Close the modal
-            const closeBtn = document.querySelector('#loginRegisterModal .btn-close');
-            if (closeBtn) closeBtn.click();
-            
-            // Navigate to reset password page
-            navigate('/reset-password');
+    // Live Supabase Reset Password Request
+    // Live Supabase Reset Password Request
+    const handleForgotPassword = async () => {
+        if (!isValidEmail(loginEmail)) {
+            setErrorMessage("Please enter a valid email address first to reset your password.");
+            return;
+        }
+
+        setLoading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        // Step 1: Check if email exists in your database table
+        const { data: userExists, error: checkError } = await supabase
+            .from('profiles') // Replace 'profiles' with your user table name
+            .select('email')
+            .eq('email', loginEmail.trim().toLowerCase())
+            .maybeSingle();
+
+        if (checkError) {
+            console.error("Error checking user existence:", checkError.message);
+        }
+
+        // If no user record was found
+        if (!userExists) {
+            setLoading(false);
+            setErrorMessage("User is not found, please register.");
+            return;
+        }
+
+        // Step 2: Email exists, trigger password reset email
+        const redirectUrl = `${window.location.origin}/reset-password`;
+        const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
+            redirectTo: redirectUrl,
+        });
+
+        setLoading(false);
+
+        if (error) {
+            setErrorMessage(error.message);
         } else {
-            alert("Please enter a valid Email Id first to reset your password.");
+            setSuccessMessage("Password reset email sent! Check your inbox.");
         }
     };
 
-    const handleFormSubmit = (e) => {
+    // Live Supabase Login & Register Action Handler
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
         if (activeTab === 'login' && isLoginValid) {
-            console.log("Logging in...", { loginEmail, loginPassword, rememberMe });
-            alert("Login Successful!");
+            const { error } = await supabase.auth.signInWithPassword({
+                email: loginEmail,
+                password: loginPassword,
+            });
+
+            setLoading(false);
+            if (error) {
+                setErrorMessage(error.message);
+            } else {
+                closeModal();
+            }
         } else if (activeTab === 'register' && isRegisterValid) {
-            console.log("Registering...", { firstName, lastName, regEmail, regPassword });
-            alert("Registration Successful!");
+            const { data, error } = await supabase.auth.signUp({
+                email: regEmail,
+                password: regPassword,
+                options: {
+                    data: {
+                        first_name: firstName,
+                        last_name: lastName,
+                        provider_type: 'emailUser',
+                    }
+                }
+            });
+
+            setLoading(false);
+            if (error) {
+                setErrorMessage(error.message);
+            } else if (data?.user && data?.session === null) {
+                setSuccessMessage("Registration successful! Please check your email to confirm account creation.");
+            } else {
+                closeModal();
+            }
         }
     };
 
     const resetForm = () => {
-        setLoginEmail(''); setLoginPassword(''); setRememberMe(false);
+        setLoginEmail(''); setLoginPassword('');
         setFirstName(''); setLastName(''); setRegEmail(''); setRegPassword(''); setConfirmPassword('');
         setShowLoginPassword(false); setShowRegPassword(false); setShowConfirmPassword(false);
+        setErrorMessage(''); setSuccessMessage(''); setLoading(false);
         setActiveTab('login');
     };
 
@@ -72,16 +142,19 @@ export const LoginRegisterModal = () => {
                     <div className="modal-header pb-0 border-bottom-0">
                         <ul className="nav nav-tabs w-100" id="myTab" role="tablist">
                             <li className="nav-item" role="presentation">
-                                <button className={`nav-link fw-bold ${activeTab === 'login' ? 'active' : ''}`} onClick={() => setActiveTab('login')} type="button">Login</button>
+                                <button className={`nav-link fw-bold ${activeTab === 'login' ? 'active' : ''}`} onClick={() => { setActiveTab('login'); setErrorMessage(''); setSuccessMessage(''); }} type="button">Login</button>
                             </li>
                             <li className="nav-item" role="presentation">
-                                <button className={`nav-link fw-bold ${activeTab === 'register' ? 'active' : ''}`} onClick={() => setActiveTab('register')} type="button">Register</button>
+                                <button className={`nav-link fw-bold ${activeTab === 'register' ? 'active' : ''}`} onClick={() => { setActiveTab('register'); setErrorMessage(''); setSuccessMessage(''); }} type="button">Register</button>
                             </li>
                         </ul>
                         <button type="button" className="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
                     </div>
 
                     <div className="modal-body pt-4">
+                        {errorMessage && <div className="alert alert-danger py-2 small">{errorMessage}</div>}
+                        {successMessage && <div className="alert alert-success py-2 small">{successMessage}</div>}
+
                         <form onSubmit={handleFormSubmit}>
                             {/* LOGIN VIEW */}
                             {activeTab === 'login' && (
@@ -111,21 +184,19 @@ export const LoginRegisterModal = () => {
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="d-flex justify-content-between align-items-center mb-4">
-                                        <div className="form-check">
-                                            <input className="form-check-input" type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
-                                            <label className="form-check-label user-select-none" htmlFor="rememberMe" style={{ cursor: 'pointer' }}>Remember me</label>
-                                        </div>
+                                    <div className="d-flex justify-content-end align-items-center mb-4">
                                         <span 
                                             className={`text-decoration-underline ${isValidEmail(loginEmail) ? 'text-primary' : 'text-muted'}`} 
                                             style={{ cursor: isValidEmail(loginEmail) ? 'pointer' : 'not-allowed', fontSize: '0.9rem' }} 
-                                            onClick={isValidEmail(loginEmail) ? handleForgotPassword : null}
-                                            title={isValidEmail(loginEmail) ? "Click to reset password" : "Enter a valid email to enable"}
+                                            onClick={isValidEmail(loginEmail) && !loading ? handleForgotPassword : null}
+                                            title={isValidEmail(loginEmail) ? "Click to send reset password email" : "Enter a valid email to enable"}
                                         >
                                             Forgot password?
                                         </span>
                                     </div>
-                                    <button type="submit" className="btn btn-primary w-100 fw-bold" disabled={!isLoginValid}>Login</button>
+                                    <button type="submit" className="btn btn-primary w-100 fw-bold" disabled={!isLoginValid || loading}>
+                                        {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "Login"}
+                                    </button>
                                 </div>
                             )}
 
@@ -191,7 +262,9 @@ export const LoginRegisterModal = () => {
                                             <small className="text-danger mt-1 d-block">Passwords do not match.</small>
                                         )}
                                     </div>
-                                    <button type="submit" className="btn btn-success w-100 fw-bold" disabled={!isRegisterValid}>Register</button>
+                                    <button type="submit" className="btn btn-success w-100 fw-bold" disabled={!isRegisterValid || loading}>
+                                        {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "Register"}
+                                    </button>
                                 </div>
                             )}
                         </form>

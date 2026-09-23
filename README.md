@@ -1,14 +1,15 @@
 # Interview Questions & Answers Practice Platform
 
-An interactive, React-based web application designed to help candidates prepare for interviews. This platform allows users to manage a collection of interview questions and practice their responses in real-time using built-in speech recognition.
+## Purpose of this Project
+An interactive, React-based web application designed to help candidates prepare for interviews. The primary purpose of this platform is to provide a structured way for users to manage a collection of interview questions and practice their responses in real-time using built-in speech recognition.
 
-## 🚀 Key Features & Purpose
+## What this Website Can Do (Key Features)
 
-- **Question Management**: Add, edit, and delete interview questions and answers.
+- **Question Management**: Add, edit, and delete interview questions and answers to build a custom study guide.
 - **Real-Time Speech Practice**: Use your microphone to practice answering questions aloud. The app compares your spoken words against the expected answer and gives you a real-time accuracy score!
 - **Speech-to-Text & Text-to-Speech**: Easily listen to questions/answers or dictate new entries using your browser's native speech APIs.
 - **Cloud Persistence**: All data is securely stored and synced using a Supabase backend.
-- **User Authentication**: Integrated Login, Registration, and Password Reset UI flows.
+- **User Authentication**: Secure Login, Registration, and Password Reset UI flows.
 - **Customizable Appearance**: Seamlessly toggle between Light, Dark, and System theme modes.
 - **Daily Visit Tracking**: A cookie-based footer counter to monitor unique daily visitors.
 
@@ -16,7 +17,7 @@ An interactive, React-based web application designed to help candidates prepare 
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Setup Rules (Available Scripts)
 
 In the project directory, you can run:
 

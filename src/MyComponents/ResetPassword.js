@@ -1,20 +1,43 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
 export const ResetPassword = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    
     const navigate = useNavigate();
 
     const isFormValid = newPassword.trim().length > 0 && newPassword === confirmPassword;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isFormValid) {
-            alert("Password successfully reset!");
-            navigate("/"); // Redirect to home
+        if (!isFormValid) return;
+
+        setLoading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        // Live Password Update with Supabase
+        const { error } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+
+        setLoading(false);
+
+        if (error) {
+            setErrorMessage(error.message);
+        } else {
+            setSuccessMessage("Password successfully updated! Redirecting to home page...");
+            setTimeout(() => {
+                navigate("/");
+            }, 2000);
         }
     };
 
@@ -22,6 +45,10 @@ export const ResetPassword = () => {
         <div className="container mt-5 pt-5 mb-5 pb-5 d-flex justify-content-center">
             <div className="card shadow-sm p-4 w-100" style={{ maxWidth: '500px' }}>
                 <h3 className="text-center mb-4 fw-bold">Reset Password</h3>
+
+                {errorMessage && <div className="alert alert-danger py-2 small">{errorMessage}</div>}
+                {successMessage && <div className="alert alert-success py-2 small">{successMessage}</div>}
+
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                         <label className="form-label fw-bold">New Password</label>
@@ -68,8 +95,8 @@ export const ResetPassword = () => {
                             <small className="text-danger mt-1 d-block">Passwords do not match.</small>
                         )}
                     </div>
-                    <button type="submit" className="btn btn-primary w-100 fw-bold" disabled={!isFormValid}>
-                        Update Password
+                    <button type="submit" className="btn btn-primary w-100 fw-bold" disabled={!isFormValid || loading}>
+                        {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "Update Password"}
                     </button>
                 </form>
             </div>

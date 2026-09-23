@@ -6,6 +6,7 @@ import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { About } from "./MyComponents/About";
 import { Home } from "./MyComponents/Home"; 
 import { LoginRegisterModal } from "./MyComponents/LoginRegisterModal";
+import EditProfileModal from "./MyComponents/EditProfileModal";
 import { ResetPassword } from "./MyComponents/ResetPassword";
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
@@ -15,6 +16,8 @@ function AppContent({
   questionAnswers,
   onDelete,
   onUpdate,
+  onForceDelete,
+  onToggleDelete,
   setQuestionAnswerCallback,
   searchQuery,
   onSearch,
@@ -25,10 +28,10 @@ function AppContent({
   itemsPerPage,
   totalCount,
   setCurrentPage,
-  setItemsPerPage
+  setItemsPerPage,
+  session
 }) {
   const location = useLocation();
-  // Check if user is currently on the Questions tab
   const isOnQuestionsPage = location.pathname === "/questions";
   const isResetPasswordPage = location.pathname === "/reset-password";
 
@@ -36,24 +39,22 @@ function AppContent({
     <>
       <Header
         title="Interview Questions Answers"
-        searchBar={isOnQuestionsPage} // Only show search on Questions tab
-        showAddQA={isOnQuestionsPage} // Only show Add Q/A on Questions tab
+        searchBar={isOnQuestionsPage}
         searchQuery={searchQuery}
         onSearch={onSearch}
         theme={theme}
         onThemeChange={setTheme}
         minimal={isResetPasswordPage}
+        session={session}
       />
 
       <Routes>
-        {/* New Welcome Home Page */}
         <Route path="/" element={
           <main className="app-main pt-5">
             <Home />
           </main>
         } />
 
-        {/* Moved Questions List to /questions */}
         <Route path="/questions" element={
           <main className="app-main pt-5">
             {loading ? (
@@ -67,12 +68,15 @@ function AppContent({
                 questionAnswers={questionAnswers} 
                 onDelete={onDelete} 
                 onUpdate={onUpdate} 
+                onForceDelete={onForceDelete}
+                onToggleDelete={onToggleDelete}
                 searchQuery={searchQuery}
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
                 totalCount={totalCount}
                 setCurrentPage={setCurrentPage}
                 setItemsPerPage={setItemsPerPage}
+                session={session}
               />
             )}
           </main>
@@ -92,6 +96,7 @@ function AppContent({
 
       <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
       <LoginRegisterModal />
+      <EditProfileModal session={session} />
       {!isResetPasswordPage && <Footer />}
     </>
   );
@@ -101,12 +106,26 @@ function App() {
   const [questionAnswers, setQuestionAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "system");
-  
+  const [session, setSession] = useState(null);
+
   // Server-side Pagination & Search States
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Track Live Supabase Auth Session State
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Apply Light / Dark / System mode theme globally
   useEffect(() => {
@@ -131,21 +150,22 @@ function App() {
     }
   }, [theme]);
 
-  // Fetch paginated and searched questions from Supabase
   const fetchQuestions = async () => {
     setLoading(true);
     
     let query = supabase
       .from('question_answers')
-      .select('*', { count: 'exact' })
-      .eq('is_deleted', false);
+      .select('*', { count: 'exact' });
 
-    // Apply search filter if present
+    const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
+    if (!isAdmin) {
+      query = query.eq('is_deleted', false);
+    }
+
     if (appliedSearchQuery.trim() !== "") {
       query = query.or(`title.ilike.%${appliedSearchQuery}%,desc.ilike.%${appliedSearchQuery}%`);
     }
 
-    // Apply pagination
     const from = (currentPage - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
     query = query.order('id', { ascending: true }).range(from, to);
@@ -164,14 +184,13 @@ function App() {
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, itemsPerPage, appliedSearchQuery]);
+  }, [currentPage, itemsPerPage, appliedSearchQuery, session]);
 
   const handleSearch = (query) => {
     setAppliedSearchQuery(query);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
-  // Search Escape Key functionality
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -182,7 +201,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // CREATE: Add new item to Supabase
   const setQuestionAnswerCallback = async (title, desc) => {
     const { error } = await supabase
       .from('question_answers')
@@ -191,11 +209,10 @@ function App() {
     if (error) {
       console.error("Error inserting question:", error.message);
     } else {
-      fetchQuestions(); // Refresh list to get updated count and pagination
+      fetchQuestions();
     }
   };
 
-  // SOFT DELETE: Flag item as deleted instead of deleting from table
   const onDelete = async (questionAnswer) => {
     const { error } = await supabase
       .from('question_answers')
@@ -205,11 +222,36 @@ function App() {
     if (error) {
       console.error("Error updating soft delete status:", error.message);
     } else {
-      fetchQuestions(); // Refresh to reflect deletion in current page view
+      fetchQuestions();
     }
   };
 
-  // UPDATE: Edit item in Supabase
+  const onForceDelete = async (id) => {
+    const { error } = await supabase
+      .from('question_answers')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error force deleting question:", error.message);
+    } else {
+      fetchQuestions();
+    }
+  };
+
+  const onToggleDelete = async (id, currentStatus) => {
+    const { error } = await supabase
+      .from('question_answers')
+      .update({ is_deleted: !currentStatus })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error toggling delete status:", error.message);
+    } else {
+      fetchQuestions();
+    }
+  };
+
   const onUpdate = async (id, updatedTitle, updatedDesc) => {
     const { error } = await supabase
       .from('question_answers')
@@ -229,6 +271,8 @@ function App() {
         questionAnswers={questionAnswers}
         onDelete={onDelete}
         onUpdate={onUpdate}
+        onForceDelete={onForceDelete}
+        onToggleDelete={onToggleDelete}
         setQuestionAnswerCallback={setQuestionAnswerCallback}
         searchQuery={appliedSearchQuery}
         onSearch={handleSearch}
@@ -240,6 +284,7 @@ function App() {
         totalCount={totalCount}
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
+        session={session}
       />
     </Router>
   );

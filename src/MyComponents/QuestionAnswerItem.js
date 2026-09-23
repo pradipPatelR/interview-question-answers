@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { QuestionAnswerPractice } from "./QuestionAnswerPractice";
 
-export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
+export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForceDelete, onToggleDelete, session }) => {
+  const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
   const deleteModalId = `deleteModal-${questionAnswer.id}`;
   const editModalId = `editModal-${questionAnswer.id}`;
   const practiceModalId = `practiceModal-${questionAnswer.id}`;
@@ -240,7 +241,23 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
             </div>
 
             <div className="col-md-4 text-md-end text-start pt-2 pt-md-0">
-              <div className="d-flex flex-wrap gap-2 justify-content-md-end justify-content-start">
+              <div className="d-flex flex-wrap gap-2 justify-content-md-end justify-content-start align-items-center">
+                {isAdmin && (
+                  <div className="form-check form-switch me-2 mb-0">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id={`flexSwitchCheck-${questionAnswer.id}`}
+                      checked={!questionAnswer.is_deleted}
+                      onChange={() => onToggleDelete(questionAnswer.id, questionAnswer.is_deleted)}
+                      title={questionAnswer.is_deleted ? "Currently Deleted" : "Currently Active"}
+                    />
+                    <label className="form-check-label small text-muted" htmlFor={`flexSwitchCheck-${questionAnswer.id}`}>
+                      {questionAnswer.is_deleted ? "Deleted" : "Active"}
+                    </label>
+                  </div>
+                )}
                 <button
                   className={`btn btn-sm ${isSpeaking ? 'btn-danger' : 'btn-outline-primary'}`}
                   onClick={handleSpeakToggle}
@@ -278,7 +295,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
                   data-bs-target={`#${deleteModalId}`} 
                   data-bs-toggle="modal"
                   onClick={stopSpeaking}
-                  title="Delete"
+                  title={isAdmin ? "Force Delete" : "Delete"}
                 >
                   <i className="fa fa-trash" style={{ fontSize: '18px' }}></i>
                 </button>
@@ -412,11 +429,11 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate }) => {
               <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              Are you sure you want to delete this Interview Question?
+              Are you sure you want to {isAdmin ? "permanently delete" : "delete"} this Interview Question?
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-              <button type="button" className="btn btn-danger" data-bs-dismiss="modal" onClick={() => onDelete(questionAnswer)}>Delete</button>
+              <button type="button" className="btn btn-danger" data-bs-dismiss="modal" onClick={() => isAdmin ? onForceDelete(questionAnswer.id) : onDelete(questionAnswer)}>Delete</button>
             </div>
           </div>
         </div>

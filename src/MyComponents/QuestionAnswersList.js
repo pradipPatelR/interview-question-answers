@@ -66,6 +66,9 @@ export const QuestionAnswersList = (props) => {
               key={questionAnswer.id} 
               onDelete={props.onDelete} 
               onUpdate={props.onUpdate} 
+              onForceDelete={props.onForceDelete}
+              onToggleDelete={props.onToggleDelete}
+              session={props.session}
             />
           ))}
 
