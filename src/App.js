@@ -1,8 +1,9 @@
 import "./App.css";
 import Header from "./MyComponents/Header";
 import { Footer } from "./MyComponents/Footer";
-import { QuestionAnswersList } from "./MyComponents/QuestionAnswersList";
 import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
+import { TopicsList } from "./MyComponents/TopicsList";
+import { TopicDetail } from "./MyComponents/TopicDetail";
 import { About } from "./MyComponents/About";
 import { Home } from "./MyComponents/Home"; 
 import { LoginRegisterModal } from "./MyComponents/LoginRegisterModal";
@@ -29,10 +30,11 @@ function AppContent({
   totalCount,
   setCurrentPage,
   setItemsPerPage,
-  session
+  session,
+  setActiveCategoryId
 }) {
   const location = useLocation();
-  const isOnQuestionsPage = location.pathname === "/questions";
+  const isOnQuestionsPage = location.pathname.startsWith("/questions");
   const isResetPasswordPage = location.pathname === "/reset-password";
 
   return (
@@ -57,28 +59,31 @@ function AppContent({
 
         <Route path="/questions" element={
           <main className="app-main pt-5">
-            {loading ? (
-              <div className="container d-flex justify-content-center align-items-center min-vh-100">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : (
-              <QuestionAnswersList 
-                questionAnswers={questionAnswers} 
-                onDelete={onDelete} 
-                onUpdate={onUpdate} 
-                onForceDelete={onForceDelete}
-                onToggleDelete={onToggleDelete}
-                searchQuery={searchQuery}
-                currentPage={currentPage}
-                itemsPerPage={itemsPerPage}
-                totalCount={totalCount}
-                setCurrentPage={setCurrentPage}
-                setItemsPerPage={setItemsPerPage}
-                session={session}
-              />
-            )}
+            <TopicsList session={session} />
+          </main>
+        } />
+
+        <Route path="/questions/:topicId" element={
+          <main className="app-main pt-5">
+            <TopicDetail 
+              session={session}
+              onCategorySelect={(catId) => {
+                 setActiveCategoryId(catId);
+                 setCurrentPage(1);
+              }}
+              questionAnswers={questionAnswers}
+              onDelete={onDelete}
+              onUpdate={onUpdate}
+              onForceDelete={onForceDelete}
+              onToggleDelete={onToggleDelete}
+              searchQuery={searchQuery}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalCount={totalCount}
+              setCurrentPage={setCurrentPage}
+              setItemsPerPage={setItemsPerPage}
+              loading={loading}
+            />
           </main>
         } />
 
@@ -97,7 +102,7 @@ function AppContent({
       <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
       <LoginRegisterModal />
       <EditProfileModal session={session} />
-      {!isResetPasswordPage && <Footer />}
+      {!isResetPasswordPage && <Footer session={session} />}
     </>
   );
 }
@@ -113,6 +118,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
 
   // Track Live Supabase Auth Session State
   useEffect(() => {
@@ -151,11 +158,13 @@ function App() {
   }, [theme]);
 
   const fetchQuestions = async () => {
+    if (!activeCategoryId) return;
     setLoading(true);
     
     let query = supabase
       .from('question_answers')
-      .select('*', { count: 'exact' });
+      .select('*', { count: 'exact' })
+      .eq('category_id', activeCategoryId);
 
     const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
     if (!isAdmin) {
@@ -184,7 +193,7 @@ function App() {
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, itemsPerPage, appliedSearchQuery, session]);
+  }, [currentPage, itemsPerPage, appliedSearchQuery, session, activeCategoryId]);
 
   const handleSearch = (query) => {
     setAppliedSearchQuery(query);
@@ -202,9 +211,13 @@ function App() {
   }, []);
 
   const setQuestionAnswerCallback = async (title, desc) => {
+    if (!activeCategoryId) {
+       alert("Please select a Topic and Category first.");
+       return;
+    }
     const { error } = await supabase
       .from('question_answers')
-      .insert([{ title, desc }]);
+      .insert([{ title, desc, category_id: activeCategoryId }]);
 
     if (error) {
       console.error("Error inserting question:", error.message);
@@ -285,6 +298,7 @@ function App() {
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
         session={session}
+        setActiveCategoryId={setActiveCategoryId}
       />
     </Router>
   );

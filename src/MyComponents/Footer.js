@@ -1,16 +1,36 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
-export const Footer = () => {
+export const Footer = ({ session }) => {
   const [visitCount, setVisitCount] = useState(0);
   const isExecuted = useRef(false);
+
+  const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
 
   useEffect(() => {
     // Prevent double execution in React Strict Mode (Dev Mode)
     if (isExecuted.current) return;
     isExecuted.current = true;
 
+    const fetchCurrentCount = async () => {
+      const { data, error } = await supabase
+        .from('site_stats')
+        .select('visit_count')
+        .eq('page_name', 'global')
+        .single();
+
+      if (!error && data) {
+        setVisitCount(data.visit_count);
+      }
+    };
+
     const handleVisitCount = async () => {
+      // Admin visits never increment the counter — just read the current value
+      if (isAdmin) {
+        fetchCurrentCount();
+        return;
+      }
+
       const hasVisited = document.cookie.split('; ').find(row => row.startsWith('has_visited='));
 
       if (!hasVisited) {
@@ -33,20 +53,8 @@ export const Footer = () => {
       }
     };
 
-    const fetchCurrentCount = async () => {
-      const { data, error } = await supabase
-        .from('site_stats')
-        .select('visit_count')
-        .eq('page_name', 'global')
-        .single();
-
-      if (!error && data) {
-        setVisitCount(data.visit_count);
-      }
-    };
-
     handleVisitCount();
-  }, []);
+  }, [isAdmin]);
 
   let footerStyle = {
     position: 'fixed',

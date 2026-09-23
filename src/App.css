@@ -41,6 +41,15 @@
   filter: brightness(0) invert(1);
 }
 
+/* Q-number badge: blue in light mode, orange in dark mode */
+:root {
+  --q-number-color: #0d6efd; /* Bootstrap primary blue */
+}
+
+[data-bs-theme="dark"] {
+  --q-number-color: #fd7e14; /* Bootstrap orange */
+}
+
 /* Visit Counter Container & Capital Title */
 .counter-wrapper {
   display: flex;

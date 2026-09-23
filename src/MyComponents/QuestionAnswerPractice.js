@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
+export const QuestionAnswerPractice = ({ questionAnswer, modalId, questionNumber }) => {
   const [isPracticing, setIsPracticing] = useState(false);
   const [practiceTranscript, setPracticeTranscript] = useState("");
   const [practiceScore, setPracticeScore] = useState(null);
@@ -258,7 +258,9 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId }) => {
           <div className="modal-body">
             
             <div className="mb-3">
-              <h5 className="fw-bold text-primary">Question:</h5>
+              <h5 className="fw-bold text-primary">
+                {questionNumber ? `Question ${questionNumber}:` : 'Question:'}
+              </h5>
               <p className="fs-6 fw-semibold">{questionAnswer.title}</p>
             </div>
 

@@ -48,22 +48,21 @@ export const QuestionAnswersList = (props) => {
 
   return (
     <div className="container mb-5 pb-5">
-      <h3 className="my-3 text-center">Interview Questions Answers</h3>
-
       {questionAnswers.length === 0 ? (
-        <div className="container text-center">
+        <div className="container text-center mt-4">
           <img
-            src={process.env.PUBLIC_URL + (searchQuery.trim() === "" ? '/ic_questionAnswer_list_empty.png' : '/ic_questionAnswer_searchList_empty.png')}
-            alt="No Interview Questions"
+            src={process.env.PUBLIC_URL + (searchQuery?.trim() === "" ? '/ic_questionAnswer_list_empty.png' : '/ic_questionAnswer_searchList_empty.png')}
+            alt="No Questions"
             style={{ width: "45%", height: "45%" }}
           />
         </div>
       ) : (
         <>
-          {questionAnswers.map((questionAnswer) => (
+          {questionAnswers.map((questionAnswer, index) => (
             <QuestionAnswerItem 
               questionAnswer={questionAnswer} 
               key={questionAnswer.id} 
+              questionNumber={indexOfFirstItem + index + 1}
               onDelete={props.onDelete} 
               onUpdate={props.onUpdate} 
               onForceDelete={props.onForceDelete}

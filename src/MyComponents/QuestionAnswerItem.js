@@ -1,14 +1,22 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { supabase } from '../supabaseClient';
 import { QuestionAnswerPractice } from "./QuestionAnswerPractice";
 
-export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForceDelete, onToggleDelete, session }) => {
+export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForceDelete, onToggleDelete, session, questionNumber }) => {
   const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
   const deleteModalId = `deleteModal-${questionAnswer.id}`;
   const editModalId = `editModal-${questionAnswer.id}`;
   const practiceModalId = `practiceModal-${questionAnswer.id}`;
+  const moveModalId = `moveModal-${questionAnswer.id}`;
 
   const [title, setTitle] = useState(questionAnswer.title);
   const [desc, setDesc] = useState(questionAnswer.desc);
+
+  const [topics, setTopics] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [isMoving, setIsMoving] = useState(false);
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -201,12 +209,78 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
     onUpdate(questionAnswer.id, title, desc);
   };
 
+  const handleMoveModalOpen = async () => {
+    stopSpeaking();
+    setIsMoving(true);
+    const { data: topicsData } = await supabase.from('topics').select('*').order('name');
+    if (topicsData) {
+      setTopics(topicsData);
+      
+      // Attempt to find the topic of the current question's category
+      const { data: qCat } = await supabase.from('categories').select('topic_id').eq('id', questionAnswer.category_id).single();
+      
+      const defaultTopic = qCat?.topic_id || (topicsData.length > 0 ? topicsData[0].id : "");
+      setSelectedTopicId(defaultTopic);
+      
+      if (defaultTopic) {
+        const { data: catsData } = await supabase.from('categories').select('*').eq('topic_id', defaultTopic).order('name');
+        if (catsData) {
+          setCategories(catsData);
+          setSelectedCategoryId(questionAnswer.category_id || (catsData.length > 0 ? catsData[0].id : ""));
+        }
+      }
+    }
+    setIsMoving(false);
+  };
+
+  const handleTopicChange = async (e) => {
+    const tId = e.target.value;
+    setSelectedTopicId(tId);
+    setSelectedCategoryId("");
+    const { data: catsData } = await supabase.from('categories').select('*').eq('topic_id', tId).order('name');
+    if (catsData) {
+      setCategories(catsData);
+      if (catsData.length > 0) setSelectedCategoryId(catsData[0].id);
+    } else {
+      setCategories([]);
+    }
+  };
+
+  const handleMoveQuestion = async () => {
+    if (!selectedCategoryId) return;
+    setIsMoving(true);
+    const { error } = await supabase.from('question_answers').update({ category_id: selectedCategoryId }).eq('id', questionAnswer.id);
+    setIsMoving(false);
+    if (!error) {
+      // we need to tell parent to refetch
+      // but wait, if it moved, it should disappear from current list if we're in TopicDetail and category changed.
+      // let's just use onUpdate with the same title/desc but trigger refetch? Wait, `onUpdate` doesn't take category_id.
+      // But we can trigger refetch! The parent gave `onUpdate` which calls `fetchQuestions()`.
+      // Let's call onUpdate with current title/desc to trigger refetch.
+      onUpdate(questionAnswer.id, title, desc); 
+    } else {
+      alert(error.message);
+    }
+  };
+
   return (
     <div>
       <div className="card my-3 shadow-sm border">
         <div className="card-body p-3 p-md-4">
           <div className="row align-items-start g-3">
             <div className="col-md-8">
+              {questionNumber && (
+                <span
+                  className="badge mb-2 d-inline-block"
+                  style={{
+                    backgroundColor: 'var(--q-number-color)',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.03em'
+                  }}
+                >
+                  Q{questionNumber}
+                </span>
+              )}
               <h5 className="fw-bold mb-2">{questionAnswer.title}</h5>
               <div>
                 <p
@@ -269,6 +343,18 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
                     <i className="fa fa-volume-up" style={{ fontSize: '18px' }}></i>
                   )}
                 </button>
+                
+                {isAdmin && (
+                  <button
+                    className="btn btn-sm btn-info text-white"
+                    data-bs-target={`#${moveModalId}`}
+                    data-bs-toggle="modal"
+                    onClick={handleMoveModalOpen}
+                    title="Move Question"
+                  >
+                    <i className="fa fa-wrench" style={{ fontSize: '18px' }}></i>
+                  </button>
+                )}
 
                 <button
                   className="btn btn-sm btn-success"
@@ -307,7 +393,8 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
 
       <QuestionAnswerPractice 
         questionAnswer={questionAnswer} 
-        modalId={practiceModalId} 
+        modalId={practiceModalId}
+        questionNumber={questionNumber}
       />
 
       <div className="modal fade" id={editModalId} tabIndex="-1" aria-labelledby={`${editModalId}Label`} aria-hidden="true">
@@ -420,6 +507,61 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="modal fade" id={moveModalId} tabIndex="-1" aria-labelledby={`${moveModalId}Label`} aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title fw-bold" id={`${moveModalId}Label`}>Move Question</h5>
+                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {isMoving ? (
+                  <div className="text-center my-3"><span className="spinner-border text-primary"></span></div>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <label className="form-label fw-bold">Topic</label>
+                      <select className="form-select" value={selectedTopicId} onChange={handleTopicChange}>
+                        {topics.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label fw-bold">Category</label>
+                      <select 
+                        className="form-select" 
+                        value={selectedCategoryId} 
+                        onChange={(e) => setSelectedCategoryId(e.target.value)}
+                        disabled={categories.length === 0}
+                      >
+                        {categories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                      {categories.length === 0 && <small className="text-muted mt-1 d-block">No categories found in this topic.</small>}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  data-bs-dismiss="modal" 
+                  onClick={handleMoveQuestion}
+                  disabled={!selectedCategoryId || isMoving}
+                >
+                  Move
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="modal fade" id={deleteModalId} aria-labelledby={`${deleteModalId}Label`} tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
