@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { QuestionAnswersList } from './QuestionAnswersList';
+import { AddQuestionAnswer } from './AddQuestionAnswer';
 
 export const TopicDetail = (props) => {
   const { topicId } = useParams();
@@ -126,12 +127,16 @@ export const TopicDetail = (props) => {
                           onClick={() => handleSelectCategory(cat.id)}
                         >
                           <span>{cat.name}</span>
-                          {isAdmin && cat.created_at && (
+                          {isAdmin && (cat.created_at || cat.updated_at) && (
                             <small className="ms-2 opacity-75" style={{ fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
-                              {new Date(cat.created_at).toLocaleString('en-US', {
+                              {cat.created_at && `Created: ${new Date(cat.created_at).toLocaleString('en-US', {
                                 month: '2-digit', day: '2-digit', year: 'numeric',
                                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                              })}
+                              }).replace(',', '')}`}
+                              {cat.updated_at && ` | Updated: ${new Date(cat.updated_at).toLocaleString('en-US', {
+                                month: '2-digit', day: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                              }).replace(',', '')}`}
                             </small>
                           )}
                         </button>
@@ -143,34 +148,49 @@ export const TopicDetail = (props) => {
             </div>
             {isAdmin && (() => {
               const selCat = categories.find(c => c.id === selectedCategoryId);
-              return selCat?.created_at ? (
+              return (selCat?.created_at || selCat?.updated_at) ? (
                 <small className="text-muted d-block mt-1" style={{ fontSize: '0.7rem' }}>
-                  Created: {new Date(selCat.created_at).toLocaleString('en-US', {
+                  {selCat.created_at && `Created: ${new Date(selCat.created_at).toLocaleString('en-US', {
                     month: '2-digit', day: '2-digit', year: 'numeric',
                     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                  })}
+                  }).replace(',', '')}`}
+                  {selCat.updated_at && ` | Updated: ${new Date(selCat.updated_at).toLocaleString('en-US', {
+                    month: '2-digit', day: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                  }).replace(',', '')}`}
                 </small>
               ) : null;
             })()}
           </div>
         </div>
         
-        {isAdmin && (
-          <div className="d-flex gap-2">
-            {selectedCategoryId && (
-              <button className="btn btn-outline-secondary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#createCategoryModal" onClick={openEditCategory}>
-                <i className="fa fa-pencil me-2"></i>Edit
+        <div className="d-flex gap-2">
+          {isAdmin && (
+            <>
+              {selectedCategoryId && (
+                <button className="btn btn-outline-secondary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#createCategoryModal" onClick={openEditCategory}>
+                  <i className="fa fa-pencil me-2"></i>Edit
+                </button>
+              )}
+              <button className="btn btn-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#createCategoryModal" onClick={openCreateCategory}>
+                <i className="fa fa-plus me-2"></i>Add Category
               </button>
-            )}
-            <button className="btn btn-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#createCategoryModal" onClick={openCreateCategory}>
-              <i className="fa fa-plus me-2"></i>Add Category
+            </>
+          )}
+          {props.session?.user && (
+            <button className="btn btn-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addQuestionAnswerModal">
+              <i className="fa fa-plus-circle me-2"></i>Add Q/A
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {selectedCategoryId ? (
-        <QuestionAnswersList {...props} />
+        <QuestionAnswersList 
+          {...props} 
+          topicName={topic.name} 
+          categoryName={selectedCategoryName} 
+        />
       ) : (
         <div className="text-center text-muted mt-5">Please select or create a category.</div>
       )}
@@ -200,6 +220,13 @@ export const TopicDetail = (props) => {
           </div>
         </div>
       )}
+
+      {/* Add Question Answer Modal */}
+      <AddQuestionAnswer 
+        addQuestionAnswer={props.addQuestionAnswer} 
+        topicName={topic.name} 
+        categoryName={selectedCategoryName} 
+      />
     </div>
   );
 };

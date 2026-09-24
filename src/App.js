@@ -1,7 +1,6 @@
 import "./App.css";
 import Header from "./MyComponents/Header";
 import { Footer } from "./MyComponents/Footer";
-import { AddQuestionAnswer } from "./MyComponents/AddQuestionAnswer";
 import { TopicsList } from "./MyComponents/TopicsList";
 import { TopicDetail } from "./MyComponents/TopicDetail";
 import { About } from "./MyComponents/About";
@@ -83,6 +82,7 @@ function AppContent({
               setCurrentPage={setCurrentPage}
               setItemsPerPage={setItemsPerPage}
               loading={loading}
+              addQuestionAnswer={setQuestionAnswerCallback}
             />
           </main>
         } />
@@ -99,7 +99,6 @@ function AppContent({
         } />
       </Routes>
 
-      <AddQuestionAnswer addQuestionAnswer={setQuestionAnswerCallback} />
       <LoginRegisterModal />
       <EditProfileModal session={session} />
       {!isResetPasswordPage && <Footer session={session} />}
@@ -229,7 +228,7 @@ function App() {
   const onDelete = async (questionAnswer) => {
     const { error } = await supabase
       .from('question_answers')
-      .update({ is_deleted: true })
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
       .eq('id', questionAnswer.id);
 
     if (error) {
@@ -255,7 +254,7 @@ function App() {
   const onToggleDelete = async (id, currentStatus) => {
     const { error } = await supabase
       .from('question_answers')
-      .update({ is_deleted: !currentStatus })
+      .update({ is_deleted: !currentStatus, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -268,7 +267,7 @@ function App() {
   const onUpdate = async (id, updatedTitle, updatedDesc) => {
     const { error } = await supabase
       .from('question_answers')
-      .update({ title: updatedTitle, desc: updatedDesc })
+      .update({ title: updatedTitle, desc: updatedDesc, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {

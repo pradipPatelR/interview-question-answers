@@ -105,12 +105,16 @@ export const TopicsList = ({ session }) => {
                     <i className="fa fa-folder-open fa-3x text-primary mb-3"></i>
                   )}
                   <h5 className="card-title text-body fw-bold">{topic.name}</h5>
-                  {isAdmin && topic.created_at && (
-                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                      {new Date(topic.created_at).toLocaleString('en-US', {
+                  {isAdmin && (topic.created_at || topic.updated_at) && (
+                    <small className="text-muted d-block mt-2" style={{ fontSize: '0.7rem' }}>
+                      {topic.created_at && `Created: ${new Date(topic.created_at).toLocaleString('en-US', {
                         month: '2-digit', day: '2-digit', year: 'numeric',
                         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-                      })}
+                      }).replace(',', '')}`}
+                      {topic.updated_at && ` | Updated: ${new Date(topic.updated_at).toLocaleString('en-US', {
+                        month: '2-digit', day: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                      }).replace(',', '')}`}
                     </small>
                   )}
                 </div>

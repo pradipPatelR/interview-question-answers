@@ -139,7 +139,11 @@ export const AddQuestionAnswer = (props) => {
             <div className="modal-dialog">
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h1 className="modal-title fs-5">Add New Question Answer</h1>
+                        <h1 className="modal-title fs-5">
+                            {props.categoryName && props.topicName 
+                                ? `Add New Question Answer for ${props.categoryName} in ${props.topicName}` 
+                                : "Add New Question Answer"}
+                        </h1>
                         <button type="button" className="btn-close" data-bs-dismiss="modal" onClick={clearForm}></button>
                     </div>
 

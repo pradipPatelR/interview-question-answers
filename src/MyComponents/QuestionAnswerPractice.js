@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
-export const QuestionAnswerPractice = ({ questionAnswer, modalId, questionNumber }) => {
+export const QuestionAnswerPractice = ({ questionAnswer, modalId, questionNumber, session }) => {
+  const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
   const [isPracticing, setIsPracticing] = useState(false);
   const [practiceTranscript, setPracticeTranscript] = useState("");
   const [practiceScore, setPracticeScore] = useState(null);
@@ -262,6 +263,18 @@ export const QuestionAnswerPractice = ({ questionAnswer, modalId, questionNumber
                 {questionNumber ? `Question ${questionNumber}:` : 'Question:'}
               </h5>
               <p className="fs-6 fw-semibold">{questionAnswer.title}</p>
+              {isAdmin && (questionAnswer.created_at || questionAnswer.updated_at) && (
+                <div className="text-muted small mt-1" style={{ fontSize: '0.75rem' }}>
+                  {questionAnswer.created_at && <div>Created: {new Date(questionAnswer.created_at).toLocaleString('en-US', {
+                    month: '2-digit', day: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                  }).replace(',', '')}</div>}
+                  {questionAnswer.updated_at && <div>Updated: {new Date(questionAnswer.updated_at).toLocaleString('en-US', {
+                    month: '2-digit', day: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                  }).replace(',', '')}</div>}
+                </div>
+              )}
             </div>
 
             <div className="mb-3">

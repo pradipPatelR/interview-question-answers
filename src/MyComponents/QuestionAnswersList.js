@@ -68,6 +68,8 @@ export const QuestionAnswersList = (props) => {
               onForceDelete={props.onForceDelete}
               onToggleDelete={props.onToggleDelete}
               session={props.session}
+              topicName={props.topicName}
+              categoryName={props.categoryName}
             />
           ))}
 

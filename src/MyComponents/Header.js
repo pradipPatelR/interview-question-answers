@@ -137,11 +137,7 @@ export default function Header(props) {
                       <option value="system">System</option>
                     </select>
                   </li>
-                  <li>
-                    <Link className="dropdown-item" data-bs-toggle="modal" data-bs-target="#addQuestionAnswerModal" to="#">
-                      <i className="fa fa-plus-circle me-2 text-primary"></i> Add Q/A
-                    </Link>
-                  </li>
+
                   
                   <li>
                     <button className="dropdown-item" data-bs-toggle="modal" data-bs-target="#editProfileModal">

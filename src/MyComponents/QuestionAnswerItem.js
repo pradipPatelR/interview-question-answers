@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { supabase } from '../supabaseClient';
 import { QuestionAnswerPractice } from "./QuestionAnswerPractice";
 
-export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForceDelete, onToggleDelete, session, questionNumber }) => {
+export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForceDelete, onToggleDelete, session, questionNumber, topicName, categoryName }) => {
   const isAdmin = session?.user?.user_metadata?.provider_type === 'admin';
   const deleteModalId = `deleteModal-${questionAnswer.id}`;
   const editModalId = `editModal-${questionAnswer.id}`;
@@ -249,7 +249,7 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
   const handleMoveQuestion = async () => {
     if (!selectedCategoryId) return;
     setIsMoving(true);
-    const { error } = await supabase.from('question_answers').update({ category_id: selectedCategoryId }).eq('id', questionAnswer.id);
+    const { error } = await supabase.from('question_answers').update({ category_id: selectedCategoryId, updated_at: new Date().toISOString() }).eq('id', questionAnswer.id);
     setIsMoving(false);
     if (!error) {
       // we need to tell parent to refetch
@@ -310,6 +310,18 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
                   >
                     {isExpanded ? "Read less" : "Read More"}
                   </button>
+                )}
+                {isAdmin && (questionAnswer.created_at || questionAnswer.updated_at) && (
+                  <div className="text-muted mt-2" style={{ fontSize: '0.75rem' }}>
+                    {questionAnswer.created_at && <div>Created: {new Date(questionAnswer.created_at).toLocaleString('en-US', {
+                      month: '2-digit', day: '2-digit', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                    }).replace(',', '')}</div>}
+                    {questionAnswer.updated_at && <div>Updated: {new Date(questionAnswer.updated_at).toLocaleString('en-US', {
+                      month: '2-digit', day: '2-digit', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                    }).replace(',', '')}</div>}
+                  </div>
                 )}
               </div>
             </div>
@@ -395,13 +407,16 @@ export const QuestionAnswerItem = ({ questionAnswer, onDelete, onUpdate, onForce
         questionAnswer={questionAnswer} 
         modalId={practiceModalId}
         questionNumber={questionNumber}
+        session={session}
       />
 
       <div className="modal fade" id={editModalId} tabIndex="-1" aria-labelledby={`${editModalId}Label`} aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h1 className="modal-title fs-5" id={`${editModalId}Label`}>Edit Question / Answer</h1>
+              <h1 className="modal-title fs-5" id={`${editModalId}Label`}>
+                {categoryName && topicName ? `Edit Question / Answer for ${categoryName} in ${topicName}` : "Edit Question / Answer"}
+              </h1>
               <button 
                 type="button" 
                 className="btn-close" 
